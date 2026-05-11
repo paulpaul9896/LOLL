@@ -54,9 +54,10 @@ export default function LoginView({ lang, onChangeLang, t }: LoginViewProps) {
         'auth/user-disabled': lang === 'zh' ? '此帳號已被停用' : 'User disabled',
         'auth/user-not-found': lang === 'zh' ? '帳號不存在，請先註冊' : 'User not found, please register',
         'auth/wrong-password': lang === 'zh' ? '密碼錯誤' : 'Wrong password',
-        'auth/email-already-in-use': lang === 'zh' ? '此 Email 已經被註冊' : 'Email already in use',
-        'auth/operation-not-allowed': lang === 'zh' ? '登入服務未啟用，請聯繫管理員' : 'Login provider not enabled',
-        'auth/weak-password': lang === 'zh' ? '密碼太弱，請至少輸入 6 位數' : 'Weak password, min 6 chars'
+        'auth/email-already-in-use': lang === 'zh' ? '此 Email 已經被註冊，請直接登入' : 'Email already in use, please login',
+        'auth/operation-not-allowed': lang === 'zh' ? '登入服務未啟用' : 'Login provider not enabled',
+        'auth/weak-password': lang === 'zh' ? '密碼太弱，請至少輸入 6 位數' : 'Weak password, min 6 chars',
+        'auth/too-many-requests': lang === 'zh' ? '嘗試次數過多，帳號已被暫時封鎖。請稍後再試，或使用 Google 登入' : 'Too many attempts. Account temporary locked. Try again later or use Google Login'
       };
       showToast(msgs[e.code] || e.message, 'error');
     } finally {
@@ -67,8 +68,9 @@ export default function LoginView({ lang, onChangeLang, t }: LoginViewProps) {
   return (
     <div className="max-w-md w-full mx-auto">
       <div className="text-center mb-8">
-        <div className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-hex-gold bg-hex-panel flex items-center justify-center ai-glow">
-          <i className="fa-solid fa-gem text-hex-blue text-4xl"></i>
+        <div className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-hex-gold bg-hex-panel overflow-hidden flex items-center justify-center ai-glow shadow-2xl">
+          <img src="/icon.png" className="w-full h-full object-cover" alt="App Logo" onError={(e) => { e.currentTarget.parentElement?.classList.add('bg-hex-panel'); e.currentTarget.style.display = 'none'; }} />
+          <i className="fa-solid fa-gem text-hex-blue text-4xl absolute z-[-1]"></i>
         </div>
         <h1 className="font-heading text-3xl text-hex-goldlight tracking-wider">英雄聯盟 沖分群組</h1>
         <p className="text-hex-red font-heading text-lg mt-1">（禁屌人）</p>
