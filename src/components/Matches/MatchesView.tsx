@@ -31,6 +31,10 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
   const [duration, setDuration] = useState('');
   const [notes, setNotes] = useState('');
   const [role, setRole] = useState('');
+  const [dmgTaken, setDmgTaken] = useState('');
+  const [cs, setCs] = useState('');
+  const [gold, setGold] = useState('');
+  const [wards, setWards] = useState('');
   
   const [screenshots, setScreenshots] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState(false);
@@ -67,6 +71,10 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
       assists: parseInt(assists) || 0,
       kda,
       dmgDealt: parseInt(dmgDealt) || null,
+      dmgTaken: parseInt(dmgTaken) || null,
+      cs: parseInt(cs) || null,
+      gold: parseInt(gold) || null,
+      wards: parseInt(wards) || null,
       notes: notes.trim() || null
     };
 
@@ -74,10 +82,15 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
     // Reset inputs
     setChampSearch('');
     setCurrentChamp('');
+    setRole('');
     setKills('');
     setDeaths('');
     setAssists('');
     setDmgDealt('');
+    setDmgTaken('');
+    setCs('');
+    setGold('');
+    setWards('');
     setNotes('');
   };
 
@@ -261,11 +274,41 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
             )}
           </div>
 
+          <select 
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full bg-hex-panel border border-gray-700 rounded px-2 py-1.5 text-white text-sm outline-none"
+          >
+            <option value="">Role (optional)</option>
+            <option value="Baron">Baron</option>
+            <option value="Jungle">Jungle</option>
+            <option value="Mid">Mid</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Support">Support</option>
+          </select>
+
           <div className="grid grid-cols-3 gap-1">
-            <input type="number" value={kills} onChange={e => setKills(e.target.value)} placeholder="K" className="bg-hex-panel border border-gray-700 rounded py-1 text-white text-xs outline-none text-center" />
-            <input type="number" value={deaths} onChange={e => setDeaths(e.target.value)} placeholder="D" className="bg-hex-panel border border-gray-700 rounded py-1 text-white text-xs outline-none text-center" />
-            <input type="number" value={assists} onChange={e => setAssists(e.target.value)} placeholder="A" className="bg-hex-panel border border-gray-700 rounded py-1 text-white text-xs outline-none text-center" />
+            <input type="number" value={kills} onChange={e => setKills(e.target.value)} placeholder="Kills" className="bg-hex-panel border border-gray-700 rounded py-1 px-2 text-white text-xs outline-none" />
+            <input type="number" value={deaths} onChange={e => setDeaths(e.target.value)} placeholder="Deaths" className="bg-hex-panel border border-gray-700 rounded py-1 px-2 text-white text-xs outline-none" />
+            <input type="number" value={assists} onChange={e => setAssists(e.target.value)} placeholder="Assists" className="bg-hex-panel border border-gray-700 rounded py-1 px-2 text-white text-xs outline-none" />
           </div>
+
+          <div className="grid grid-cols-2 gap-1">
+            <input type="number" value={dmgDealt} onChange={e => setDmgDealt(e.target.value)} placeholder="Dmg Dealt" className="bg-hex-panel border border-gray-700 rounded py-1 px-2 text-white text-xs outline-none" />
+            <input type="number" value={dmgTaken} onChange={e => setDmgTaken(e.target.value)} placeholder="Dmg Taken" className="bg-hex-panel border border-gray-700 rounded py-1 px-2 text-white text-xs outline-none" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-1">
+            <input type="number" value={cs} onChange={e => setCs(e.target.value)} placeholder="CS/Farm" className="bg-hex-panel border border-gray-700 rounded py-1 px-2 text-white text-xs outline-none" />
+            <input type="number" value={gold} onChange={e => setGold(e.target.value)} placeholder="Gold Earned" className="bg-hex-panel border border-gray-700 rounded py-1 px-2 text-white text-xs outline-none" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-1 mb-1">
+            <input type="number" value={wards} onChange={e => setWards(e.target.value)} placeholder="Wards Placed" className="bg-hex-panel border border-gray-700 rounded py-1 px-2 text-white text-xs outline-none" />
+            <input type="number" value={duration} onChange={e => setDuration(e.target.value)} placeholder="Duration (min)" className="bg-hex-panel border border-gray-700 rounded py-1 px-2 text-white text-xs outline-none" />
+          </div>
+
+          <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="MVP / Notes" className="w-full bg-hex-panel border border-gray-700 rounded py-1.5 px-2 text-white text-xs outline-none mb-1" />
 
           <button 
             onClick={handleAddPlayer}
