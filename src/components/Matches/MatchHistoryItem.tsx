@@ -37,23 +37,42 @@ export default function MatchHistoryItem({ match, t, onOpenChamp }: MatchHistory
         <button onClick={handleDelete} className="text-gray-700 hover:text-hex-red transition opacity-0 group-hover:opacity-100"><i className="fa-solid fa-trash-can"></i></button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-1.5 border-t border-gray-800 pt-3">
         {match.players.map((p, i) => (
           <div 
             key={i} 
             onClick={() => onOpenChamp(p.champion)}
-            className="bg-[#010A13] border border-gray-800 hover:border-hex-gold transition pl-1 pr-3 py-1 rounded flex items-center gap-2 cursor-pointer group/player min-w-[120px]"
+            className="bg-[#010A13] border border-gray-800 hover:border-hex-gold transition px-3 py-2 rounded flex items-center justify-between cursor-pointer group/player min-w-[200px]"
           >
-            <div className="relative w-8 h-8 rounded-full border border-gray-700 overflow-hidden flex-shrink-0">
-              <img src={champImgUrl(p.champion)} className="w-full h-full object-cover" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-white text-xs font-bold truncate tracking-tight">{p.name}</div>
-              <div className="text-hex-gold text-[9px] truncate uppercase">{p.champion}</div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[9px] text-hex-green font-mono">{p.kills}/{p.deaths}/{p.assists}</span>
-                {p.dmgDealt && <span className="text-[8px] text-gray-600">⚔️{(p.dmgDealt/1000).toFixed(1)}k</span>}
+            <div className="flex items-center gap-3 w-1/3 min-w-[120px]">
+              <div className="relative w-9 h-9 rounded-full border border-gray-700 overflow-hidden flex-shrink-0">
+                <img src={champImgUrl(p.champion)} className="w-full h-full object-cover" />
               </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="text-white text-[13px] font-bold truncate tracking-tight">{p.name}</div>
+                  {p.role && <div className="text-gray-500 text-[10px]">({p.role})</div>}
+                </div>
+                <div className="text-hex-gold text-[10px] truncate uppercase">{p.champion}</div>
+              </div>
+            </div>
+
+            <div className="w-1/4 min-w-[100px] flex flex-col items-center">
+              <span className="text-[12px] text-hex-green font-mono tracking-wider">{p.kills}/{p.deaths}/{p.assists}</span>
+              <span className="text-[10px] text-gray-500 mt-0.5">KDA: {p.kda}</span>
+            </div>
+
+            <div className="flex-1 flex flex-wrap gap-2 text-[10px] text-gray-400 justify-end items-center">
+              {p.dmgDealt && <span className="flex items-center gap-1" title="Damage Dealt"><i className="fa-solid fa-fire text-hex-red"></i> {p.dmgDealt.toLocaleString()}</span>}
+              {p.dmgTaken && <span className="flex items-center gap-1" title="Damage Taken"><i className="fa-solid fa-shield text-gray-500"></i> {p.dmgTaken.toLocaleString()}</span>}
+              {p.cs && <span className="flex items-center gap-1" title="CS/Farm"><i className="fa-solid fa-khanda text-gray-400"></i> {p.cs}</span>}
+              {p.gold && <span className="flex items-center gap-1" title="Gold"><i className="fa-solid fa-coins text-yellow-500"></i> {p.gold.toLocaleString()}</span>}
+              {p.wards && <span className="flex items-center gap-1" title="Wards"><i className="fa-solid fa-eye text-blue-400"></i> {p.wards}</span>}
+              {p.notes && (
+                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ml-1 ${p.notes.toLowerCase().includes('mvp') ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50' : p.notes.toLowerCase().includes('svp') ? 'bg-gray-400/20 text-gray-400 border border-gray-400/50' : 'bg-hex-panel text-gray-300'}`}>
+                  {p.notes}
+                </span>
+              )}
             </div>
           </div>
         ))}

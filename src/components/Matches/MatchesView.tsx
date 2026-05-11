@@ -60,7 +60,7 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
     const k = parseInt(kills) || 0;
     const d = parseInt(deaths) || 0;
     const a = parseInt(assists) || 0;
-    const kda = ((k + a) / Math.max(d, 1)).toFixed(2);
+    const kda = d === 0 ? 'Perfect' : ((k + a) / d).toFixed(2);
 
     const newPlayer: MatchPlayer = {
       name: currentFriend,
@@ -113,7 +113,7 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
         savedBy: user.email || 'unknown',
         screenshot: screenshots[0] || null,
         duration: parseInt(duration) || null,
-        appVersion: '3.0'
+        appVersion: '3.1'
       });
       
       setResult('');
@@ -177,7 +177,7 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
       const base64 = screenshots[0].split(',')[1];
       const mimeType = 'image/jpeg';
       
-      const prompt = `Analyze this Wild Rift match result screenshot. Extract Result (Victory/Defeat), Match Duration (min), and the details for the 5 players on the LEFT team (the team whose stats are on the left side). Carefully read their in-game Names (they can be in English, Chinese, or contain symbols), Champion name, Kills, Deaths, Assists, and Damage Dealt. Return ONLY valid JSON with this exact structure: {"result":"Victory"|"Defeat", "duration":number, "players": [{"name":"exact player name", "champion":"champion name", "kills":num, "deaths":num, "assists":num, "dmgDealt":num}]}`;
+      const prompt = `Analyze this Wild Rift match result screenshot. Extract Result (Victory/Defeat), Match Duration (min), and the details for the 5 players on the LEFT team (the team whose stats are on the left side). Carefully read their in-game Names, Champion name, Kills, Deaths, Assists, Damage Dealt, Damage Taken, CS (Minions/Monsters killed), Gold Earned, Wards (if available), and MVP/SVP status. Return ONLY valid JSON with this exact structure: {"result":"Victory"|"Defeat", "duration":number, "players": [{"name":"exact player name", "champion":"champion name", "kills":num, "deaths":num, "assists":num, "dmgDealt":num|null, "dmgTaken":num|null, "cs":num|null, "gold":num|null, "wards":num|null, "notes":"MVP"|"SVP"|""}]}`;
 
       const ai = new GoogleGenAI({ apiKey: apiKey });
       const resp = await ai.models.generateContent({
@@ -189,13 +189,13 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
       const parsedStr = resp.text || "{}";
       const parsed = JSON.parse(parsedStr);
 
-      if (parsed.result) setResult(parsed.result);
+      if (parsed.result) setResult(parsed.result == 'Victory' ? 'Victory' : 'Defeat');
       if (parsed.duration) setDuration(parsed.duration.toString());
       
       if (parsed.players) {
         const newPlayers = parsed.players.map((p: any) => {
-          const champ = CHAMPIONS.find(c => c.name.toLowerCase().includes(p.champion.toLowerCase()))?.name || p.champion;
-          const friend = friends.find(f => f.name.toLowerCase().includes(p.name.toLowerCase()))?.name || p.name;
+          const champ = CHAMPIONS.find(c => c.name.toLowerCase().includes(p.champion?.toLowerCase() || ''))?.name || p.champion || '';
+          const friend = friends.find(f => f.name.toLowerCase().includes(p.name?.toLowerCase() || ''))?.name || p.name || 'Unknown';
           return {
             name: friend,
             champion: champ,
@@ -203,7 +203,12 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
             deaths: p.deaths || 0,
             assists: p.assists || 0,
             dmgDealt: p.dmgDealt || null,
-            kda: ((p.kills + p.assists) / Math.max(p.deaths, 1)).toFixed(2)
+            dmgTaken: p.dmgTaken || null,
+            cs: p.cs || null,
+            gold: p.gold || null,
+            wards: p.wards || null,
+            notes: p.notes || null,
+            kda: p.deaths === 0 ? 'Perfect' : (((p.kills || 0) + (p.assists || 0)) / p.deaths).toFixed(2)
           };
         });
         setMatchPlayers(newPlayers);
