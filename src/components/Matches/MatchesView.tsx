@@ -7,6 +7,7 @@ import { showToast } from '../UI/ToastContainer';
 import { CHAMPIONS } from '../../data/champions';
 import { champImgUrl, formatWRAbilityText } from '../../lib/utils';
 import MatchHistoryItem from './MatchHistoryItem';
+import { GoogleGenAI } from "@google/genai";
 
 interface MatchesViewProps {
   friends: Friend[];
@@ -165,21 +166,15 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
       
       const prompt = `Analyze this Wild Rift match result. Extract Result (Victory/Defeat), Match Duration (min), and for up to 5 players: Name, Champion, Kills, Deaths, Assists, Damage Dealt. Return ONLY JSON: {"result":"Victory"|"Defeat", "duration":number, "players": [{"name":"str", "champion":"str", "kills":num, "deaths":num, "assists":num, "dmgDealt":num}]}`;
 
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ inlineData: { mimeType, data: base64 } }, { text: prompt }] }],
-          generationConfig: { temperature: 0, responseMimeType: "application/json" }
-        })
+      const ai = new GoogleGenAI({ apiKey: apiKey });
+      const resp = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: { parts: [{ inlineData: { mimeType, data: base64 } }, { text: prompt }] },
+        config: { temperature: 0, responseMimeType: "application/json" }
       });
 
-      if (!resp.ok) {
-        const errObj = await resp.json().catch(() => null);
-        throw new Error(errObj?.error?.message || 'Gemini API error');
-      }
-      const data = await resp.json();
-      const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
+      const parsedStr = resp.text || "{}";
+      const parsed = JSON.parse(parsedStr);
 
       if (parsed.result) setResult(parsed.result);
       if (parsed.duration) setDuration(parsed.duration.toString());
