@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "Friend": {
+      "title": "Friend",
+      "description": "A platform member/friend in the squad",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "favoriteChampions": { "type": "array", "items": { "type": "string" } },
+        "roles": { "type": "array", "items": { "type": "string" } },
+        "avatar": { "type": "string", "description": "Base64 or URL for profile picture" },
+        "squadId": { "type": "string" }
+      },
+      "required": ["name", "squadId"]
+    },
+    "MatchPlayer": {
+      "title": "MatchPlayer",
+      "description": "Player stats within a specific match",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "champion": { "type": "string" },
+        "role": { "type": "string" },
+        "kills": { "type": "number" },
+        "deaths": { "type": "number" },
+        "assists": { "type": "number" },
+        "kda": { "type": "string" },
+        "dmgDealt": { "type": "number" },
+        "dmgTaken": { "type": "number" },
+        "cs": { "type": "number" },
+        "gold": { "type": "number" },
+        "wards": { "type": "number" },
+        "duration": { "type": "number" },
+        "notes": { "type": "string" }
+      }
+    },
+    "Match": {
+      "title": "Match",
+      "description": "Recorded match results",
+      "type": "object",
+      "properties": {
+        "timestamp": { "type": "number" },
+        "date": { "type": "string" },
+        "result": { "type": "string", "enum": ["Victory", "Defeat"] },
+        "players": { "type": "array", "items": { "$ref": "MatchPlayer" } },
+        "savedBy": { "type": "string" },
+        "screenshot": { "type": "string" },
+        "duration": { "type": "number" },
+        "notes": { "type": "string" },
+        "appVersion": { "type": "string" }
+      },
+      "required": ["timestamp", "result", "players"]
+    },
+    "AppConfig": {
+      "title": "AppConfig",
+      "description": "Global application configuration",
+      "type": "object",
+      "properties": {
+        "geminiKey": { "type": "string" },
+        "slideshowImages": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "LiveStats": {
+      "title": "LiveStats",
+      "description": "Cached live champion stats",
+      "type": "object",
+      "properties": {
+        "stats": { "type": "object" },
+        "updatedAt": { "type": "number" },
+        "source": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/friends/{friendId}": {
+      "schema": "Friend",
+      "description": "Squad members collection"
+    },
+    "/matches/{matchId}": {
+      "schema": "Match",
+      "description": "Match history collection"
+    },
+    "/appConfig/settings": {
+      "schema": "AppConfig",
+      "description": "App configuration"
+    },
+    "/liveStats/cache": {
+      "schema": "LiveStats",
+      "description": "Champion stats cache"
+    }
+  }
+}

@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Phase 4.0: Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Helpers
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    
+    // Identity Check: For this squad app, anyone verified is part of the squad.
+    function isSquad() { return isVerified(); }
+
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    function isPlayerListValid(players) {
+      return players is list && players.size() <= 5 && players.size() > 0 &&
+             players[0] is map && players[0].keys().hasAll(['name', 'champion']);
+    }
+
+    // Validation Blueprint for Friend (Squad Member)
+    function isValidFriend(data) {
+      return data.keys().hasAll(['name', 'favoriteChampions', 'roles', 'avatar', 'squadId']) &&
+             data.keys().size() == 5 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 50 &&
+             data.squadId is string && data.squadId == 'global' &&
+             data.roles is list && data.roles.size() <= 10 &&
+             data.favoriteChampions is list && data.favoriteChampions.size() <= 20 &&
+             data.avatar is string && data.avatar.size() <= 1048576; // 1MB for base64
+    }
+
+    // Validation Blueprint for Match
+    function isValidMatch(data) {
+      return data.keys().hasAll(['timestamp', 'date', 'result', 'players', 'savedBy', 'screenshot', 'duration', 'appVersion']) &&
+             data.keys().size() == 8 &&
+             data.timestamp is number &&
+             data.date is string && data.date.size() <= 20 &&
+             data.result is string && (data.result == 'Victory' || data.result == 'Defeat') &&
+             data.savedBy is string && data.savedBy == request.auth.token.email &&
+             data.appVersion is string && data.appVersion == '3.0' &&
+             isPlayerListValid(data.players) &&
+             (data.screenshot == null || (data.screenshot is string && data.screenshot.size() <= 1048576)) &&
+             (data.duration == null || data.duration is number);
+    }
+
+    // Validation Blueprint for AppConfig
+    function isValidAppConfig(data) {
+      return data.keys().hasAll(['geminiKey', 'updatedAt']) &&
+             data.keys().size() == 2 &&
+             data.updatedAt is number &&
+             data.geminiKey is string && data.geminiKey.size() <= 200;
+    }
+
+    // Collections
+    match /friends/{friendId} {
+      allow read: if isSquad() && existing().squadId == 'global';
+      allow list: if isSquad() && resource.data.squadId == 'global';
+      
+      allow create: if isSquad() && isValidId(friendId) && isValidFriend(incoming());
+      
+      allow update: if isSquad() && isValidId(friendId) && isValidFriend(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'favoriteChampions', 'roles', 'avatar'])
+      );
+      
+      allow delete: if isSquad() && isValidId(friendId);
+    }
+
+    match /matches/{matchId} {
+      allow read: if isSquad() && existing().appVersion == '3.0';
+      allow list: if isSquad() && resource.data.appVersion == '3.0';
+      
+      allow create: if isSquad() && isValidId(matchId) && isValidMatch(incoming());
+      
+      // Matches are strictly immutable history records, but we allow simple note/screenshot updates for demo purposes 
+      // If we don't need updates, we can restrict them. No update logic exists in the UI currently, just delete.
+      allow update: if false; 
+      
+      allow delete: if isSquad() && isValidId(matchId);
+    }
+
+    match /appConfig/{configId} {
+      allow read: if isSquad() && isValidId(configId);
+      allow list: if false; // no listing config
+      
+      allow create: if isSquad() && configId == 'settings' && isValidAppConfig(incoming());
+      allow update: if isSquad() && configId == 'settings' && isValidAppConfig(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['geminiKey', 'updatedAt'])
+      );
+      allow delete: if false;
+    }
+  }
+}
