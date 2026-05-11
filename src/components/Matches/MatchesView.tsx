@@ -91,7 +91,7 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
     }
 
     try {
-      await addDoc(collection(db, 'artifacts', 'wildrift-companion-platform', 'public', 'data', 'matches'), {
+      await addDoc(collection(db, 'matches'), {
         timestamp: Date.now(),
         date: new Date().toLocaleDateString('zh-HK'),
         result,
@@ -174,7 +174,10 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
         })
       });
 
-      if (!resp.ok) throw new Error('Gemini API error');
+      if (!resp.ok) {
+        const errObj = await resp.json().catch(() => null);
+        throw new Error(errObj?.error?.message || 'Gemini API error');
+      }
       const data = await resp.json();
       const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
 

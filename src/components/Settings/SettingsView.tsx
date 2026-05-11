@@ -17,7 +17,7 @@ export default function SettingsView({ lang, onChangeLang, t, user }: SettingsVi
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'appConfig'))
+    getDoc(doc(db, 'appConfig', 'settings'))
       .then(snap => {
         if (snap.exists() && snap.data().geminiKey) {
           setApiKey(snap.data().geminiKey);
@@ -30,7 +30,7 @@ export default function SettingsView({ lang, onChangeLang, t, user }: SettingsVi
     localStorage.setItem('gemini_api_key', apiKey);
     setLoading(true);
     try {
-      await setDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'appConfig'), {
+      await setDoc(doc(db, 'appConfig', 'settings'), {
         geminiKey: apiKey,
         updatedAt: Date.now()
       }, { merge: true });

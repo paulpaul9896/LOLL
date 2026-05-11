@@ -33,19 +33,19 @@ export default function App() {
       setUser(u);
       if (u) {
         // App settings
-        getDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'appConfig')).then(snap => {
+        getDoc(doc(db, 'appConfig', 'settings')).then(snap => {
           if (snap.exists() && snap.data().geminiKey) {
             localStorage.setItem('gemini_api_key', snap.data().geminiKey);
           }
         });
 
         // Subscriptions
-        const friendsUnsub = onSnapshot(collection(db, 'artifacts', 'wildrift-companion-platform', 'public', 'data', 'friends'), snap => {
+        const friendsUnsub = onSnapshot(query(collection(db, 'friends'), where('squadId', '==', 'global')), snap => {
           setFriends(snap.docs.map(d => ({ id: d.id, ...d.data() } as Friend)));
         }, error => {
           handleFirestoreError(error, OperationType.LIST, 'friends');
         });
-        const matchesUnsub = onSnapshot(query(collection(db, 'artifacts', 'wildrift-companion-platform', 'public', 'data', 'matches'), orderBy('timestamp', 'desc')), snap => {
+        const matchesUnsub = onSnapshot(query(collection(db, 'matches'), orderBy('timestamp', 'desc')), snap => {
           setMatches(snap.docs.map(d => ({ id: d.id, ...d.data() } as Match)));
         }, error => {
           handleFirestoreError(error, OperationType.LIST, 'matches');
