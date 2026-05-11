@@ -22,17 +22,18 @@ export default function ChampionModal({ champName, onClose, t, matches, onOpenCh
   useEffect(() => {
     if (!c) return;
     setLoading(true);
-    fetch(`https://ddragon.leagueoflegends.com/cdn/14.9.1/data/en_US/champion/${c.dd}.json`)
+    const version = '16.9.1';
+    fetch(`https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion/${c.dd}.json`)
       .then(r => r.json())
       .then(json => {
         const data = Object.values(json.data)[0] as any;
         const mapped = [
-          { slot: 'P', name: data.passive.name, desc: data.passive.description, icon: `https://ddragon.leagueoflegends.com/cdn/14.9.1/img/passive/${data.passive.image.full}` },
+          { slot: 'P', name: data.passive.name, desc: data.passive.description, icon: `https://ddragon.leagueoflegends.com/cdn/${version}/img/passive/${data.passive.image.full}` },
           ...data.spells.map((s: any, i: number) => ({
             slot: ['Q', 'W', 'E', 'R'][i],
             name: s.name,
             desc: s.description,
-            icon: `https://ddragon.leagueoflegends.com/cdn/14.9.1/img/spell/${s.image.full}`
+            icon: `https://ddragon.leagueoflegends.com/cdn/${version}/img/spell/${s.image.full}`
           }))
         ];
         setAbilities(mapped);

@@ -6,11 +6,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function champImgUrl(name: string, dd: string = '') {
+  const version = '16.9.1';
   if (name === 'Norra') {
-    return `https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Yuumi.png`;
+    return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/Yuumi.png`;
+  }
+  if (name === 'Mel') {
+    return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/Seraphine.png`; // Fallback placeholder
   }
   const ddName = dd || name.replace(/[' &\-]/g, '');
-  return `https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/${ddName}.png`;
+  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${ddName}.png`;
 }
 
 export function formatWRAbilityText(raw: string) {

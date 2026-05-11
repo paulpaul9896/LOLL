@@ -40,7 +40,13 @@ export default function ChampionsView({ t, onOpenChamp, matches }: ChampionsView
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl text-hex-goldlight">{t('champ_title')}</h1>
-          <p className="text-gray-400 text-xs uppercase tracking-widest">{filteredChamps.length} HEROES REGISTERED</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-gray-400 text-[10px] uppercase tracking-widest">{filteredChamps.length} HEROES REGISTERED</span>
+            <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
+            <span className="text-hex-blue text-[10px] font-medium flex items-center gap-1">
+              <i className="fa-solid fa-database"></i> {t('data_source')}
+            </span>
+          </div>
         </div>
         <div className="flex bg-[#010A13] border border-gray-800 rounded p-1 gap-1">
           <button 

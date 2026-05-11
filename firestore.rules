@@ -27,7 +27,6 @@ service cloud.firestore {
     // Validation Blueprint for Friend (Squad Member)
     function isValidFriend(data) {
       return data.keys().hasAll(['name', 'favoriteChampions', 'roles', 'avatar', 'squadId']) &&
-             data.keys().size() == 5 &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 50 &&
              data.squadId is string && data.squadId == 'global' &&
              data.roles is list && data.roles.size() <= 10 &&
@@ -37,16 +36,15 @@ service cloud.firestore {
 
     // Validation Blueprint for Match
     function isValidMatch(data) {
-      return data.keys().hasAll(['timestamp', 'date', 'result', 'players', 'savedBy', 'screenshot', 'duration', 'appVersion']) &&
-             data.keys().size() == 8 &&
+      return data.keys().hasAll(['timestamp', 'date', 'result', 'players', 'savedBy']) &&
              data.timestamp is number &&
              data.date is string && data.date.size() <= 20 &&
              data.result is string && (data.result == 'Victory' || data.result == 'Defeat') &&
-             data.savedBy is string && data.savedBy == request.auth.token.email &&
-             data.appVersion is string && data.appVersion == '3.0' &&
+             data.savedBy is string &&
+             (!('appVersion' in data.keys()) || data.appVersion is string) &&
              isPlayerListValid(data.players) &&
-             (data.screenshot == null || (data.screenshot is string && data.screenshot.size() <= 1048576)) &&
-             (data.duration == null || data.duration is number);
+             (!('screenshot' in data.keys()) || data.screenshot == null || (data.screenshot is string && data.screenshot.size() <= 1048576)) &&
+             (!('duration' in data.keys()) || data.duration == null || data.duration is number);
     }
 
     // Validation Blueprint for AppConfig
@@ -57,7 +55,18 @@ service cloud.firestore {
              data.geminiKey is string && data.geminiKey.size() <= 200;
     }
 
-    // Collections
+    // Temporary rules for automatic migration
+    match /artifacts/wildrift-companion-platform/public/data/friends/{friendId} {
+      allow read: if isSquad();
+    }
+    match /artifacts/wildrift-companion-platform/public/data/matches/{matchId} {
+      allow read: if isSquad();
+    }
+    match /artifacts/wildrift-companion-platform/public/appConfig/{configId} {
+      allow read: if isSquad();
+    }
+
+    // Standard Collections
     match /friends/{friendId} {
       allow read: if isSquad() && existing().squadId == 'global';
       allow list: if isSquad() && resource.data.squadId == 'global';
@@ -72,14 +81,13 @@ service cloud.firestore {
     }
 
     match /matches/{matchId} {
-      allow read: if isSquad() && existing().appVersion == '3.0';
-      allow list: if isSquad() && resource.data.appVersion == '3.0';
+      // Allow read/list for all squad members on their matches
+      allow read, list: if isSquad();
       
       allow create: if isSquad() && isValidId(matchId) && isValidMatch(incoming());
-      
-      // Matches are strictly immutable history records, but we allow simple note/screenshot updates for demo purposes 
-      // If we don't need updates, we can restrict them. No update logic exists in the UI currently, just delete.
-      allow update: if false; 
+      allow update: if isSquad() && isValidId(matchId) && isValidMatch(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['result', 'players', 'duration', 'screenshot', 'appVersion'])
+      );
       
       allow delete: if isSquad() && isValidId(matchId);
     }

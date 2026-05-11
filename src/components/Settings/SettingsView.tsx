@@ -77,6 +77,21 @@ export default function SettingsView({ lang, onChangeLang, t, user }: SettingsVi
           </div>
         </section>
 
+        <section className="bg-gradient-to-br from-[#021323] to-[#010a13] p-6 rounded-lg border border-hex-gold/20 shadow-[-10px_10px_30px_rgba(0,0,0,0.5)]">
+          <h2 className="font-heading text-sm text-hex-gold mb-2 flex items-center gap-3">
+            <i className="fa-solid fa-database text-hex-blue"></i> Live Stats Source
+          </h2>
+          <p className="text-white text-sm mb-2 leading-relaxed">
+            wrstats.online (sourced from Chinese Riot official API)
+          </p>
+          <div className="text-hex-green text-xs font-medium bg-hex-green/10 rounded px-2 py-1 inline-flex items-center">
+            <i className="fa-solid fa-check mr-2"></i> 139 champions with real win rate / pick rate / ban rate
+          </div>
+          <p className="text-gray-500 text-xs mt-3">
+            Last updated: May 11, 2026 • Updated daily
+          </p>
+        </section>
+
         <section className="pt-6 border-t border-gray-800">
           <h2 className="font-heading text-sm text-hex-gold mb-2 flex items-center gap-3">
             <i className="fa-brands fa-google text-hex-blue"></i> Gemini Operative AI
@@ -104,7 +119,7 @@ export default function SettingsView({ lang, onChangeLang, t, user }: SettingsVi
         <section className="pt-6 border-t border-gray-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-4 bg-[#010A13] rounded border border-gray-800 group">
             <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1 group-hover:text-hex-gold transition">Nexus Build</p>
-            <p className="text-white text-sm font-bold">WR-Companion v3.0.0-PRO</p>
+            <p className="text-white text-sm font-bold">WR-Companion v3.1.0-PRO</p>
           </div>
           <div className="p-4 bg-[#010A13] rounded border border-gray-800 group">
             <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1 group-hover:text-hex-gold transition">Telemetry Service</p>

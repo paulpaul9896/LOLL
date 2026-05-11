@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, query, orderBy, onSnapshot, doc, getDoc, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, getDoc, where, getDocs, writeBatch } from 'firebase/firestore';
 import { Friend, Match } from './types';
 import { i18n, Lang } from './data/i18n';
 import LoginView from './components/Auth/LoginView';
@@ -38,6 +38,36 @@ export default function App() {
             localStorage.setItem('gemini_api_key', snap.data().geminiKey);
           }
         });
+
+        // Automatic Legacy Migration
+        const migrateLegacy = async () => {
+          try {
+            const legacyPathPrefix = ['artifacts', 'wildrift-companion-platform', 'public', 'data'];
+            const lf = await getDocs(collection(db, legacyPathPrefix[0], legacyPathPrefix[1], legacyPathPrefix[2], legacyPathPrefix[3], 'friends'));
+            const lm = await getDocs(collection(db, legacyPathPrefix[0], legacyPathPrefix[1], legacyPathPrefix[2], legacyPathPrefix[3], 'matches'));
+            const la = await getDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'appConfig'));
+            
+            if (lf.size > 0 || lm.size > 0 || la.exists()) {
+              const batch = writeBatch(db);
+              lf.forEach(d => {
+                const data = d.data();
+                if (!data.squadId) data.squadId = 'global';
+                batch.set(doc(collection(db, 'friends'), d.id), data, { merge: true });
+              });
+              lm.forEach(d => {
+                batch.set(doc(collection(db, 'matches'), d.id), d.data(), { merge: true });
+              });
+              if (la.exists()) {
+                batch.set(doc(db, 'appConfig', 'settings'), la.data(), { merge: true });
+              }
+              await batch.commit();
+              console.log('Legacy records restored automatically');
+            }
+          } catch (e) {
+            console.error('Migration failed:', e);
+          }
+        };
+        migrateLegacy();
 
         // Subscriptions
         const friendsUnsub = onSnapshot(query(collection(db, 'friends'), where('squadId', '==', 'global')), snap => {

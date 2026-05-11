@@ -113,7 +113,6 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
         result,
         players: matchPlayers,
         savedBy: user.email || 'unknown',
-        screenshot: screenshots[0] || null,
         duration: parseInt(duration) || null,
         appVersion: '3.1'
       });

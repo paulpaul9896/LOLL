@@ -82,19 +82,6 @@ export default function MatchHistoryItem({ match, t, onOpenChamp, onEdit }: Matc
           </div>
         ))}
       </div>
-
-      {match.screenshot && (
-        <div className="mt-3 relative h-32 rounded border border-gray-800 overflow-hidden group/img">
-          <img src={match.screenshot} className="w-full h-full object-cover opacity-60 group-hover/img:opacity-100 transition duration-500" />
-          <div className="absolute inset-0 bg-gradient-to-t from-hex-panel to-transparent pointer-events-none"></div>
-          <button 
-            onClick={() => window.open(match.screenshot!, '_blank')}
-            className="absolute bottom-2 right-2 text-[10px] text-hex-blue hover:text-white transition bg-hex-bg/80 px-2 py-1 rounded border border-hex-blue/30"
-          >
-            <i className="fa-solid fa-expand mr-1"></i> VIEW FULL
-          </button>
-        </div>
-      )}
     </div>
   );
 }
