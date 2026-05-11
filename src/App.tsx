@@ -120,6 +120,7 @@ export default function App() {
           onClose={() => setSelectedChamp(null)} 
           t={t} 
           matches={matches}
+          onOpenChamp={setSelectedChamp}
         />
       )}
 

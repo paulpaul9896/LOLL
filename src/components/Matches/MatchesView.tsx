@@ -7,6 +7,7 @@ import { showToast } from '../UI/ToastContainer';
 import { CHAMPIONS } from '../../data/champions';
 import { champImgUrl, formatWRAbilityText } from '../../lib/utils';
 import MatchHistoryItem from './MatchHistoryItem';
+import EditMatchModal from './EditMatchModal';
 import { GoogleGenAI } from "@google/genai";
 
 interface MatchesViewProps {
@@ -18,6 +19,7 @@ interface MatchesViewProps {
 }
 
 export default function MatchesView({ friends, matches, t, onOpenChamp, user }: MatchesViewProps) {
+  const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [result, setResult] = useState<'Victory' | 'Defeat' | ''>('');
   const [matchPlayers, setMatchPlayers] = useState<MatchPlayer[]>([]);
   const [currentFriend, setCurrentFriend] = useState('');
@@ -127,10 +129,10 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
   };
 
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const files = Array.from(e.target.files as FileList || []);
     const newScreens: string[] = [];
     
-    files.forEach(file => {
+    files.forEach((file: File) => {
       const reader = new FileReader();
       reader.onload = (ev) => {
         const dataUrl = ev.target?.result as string;
@@ -383,10 +385,14 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
           </div>
         ) : (
           matches.map(m => (
-            <MatchHistoryItem key={m.id} match={m} t={t} onOpenChamp={onOpenChamp} />
+            <MatchHistoryItem key={m.id} match={m} t={t} onOpenChamp={onOpenChamp} onEdit={(match) => setEditingMatch(match)} />
           ))
         )}
       </div>
+
+      {editingMatch && (
+        <EditMatchModal match={editingMatch} onClose={() => setEditingMatch(null)} />
+      )}
     </div>
   );
 }

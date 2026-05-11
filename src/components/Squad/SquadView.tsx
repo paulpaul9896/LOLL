@@ -158,7 +158,17 @@ export default function SquadView({ friends, matches, t, onOpenChamp, onEditFrie
   );
 }
 
-function FriendCard({ f, matches, t, onOpenChamp, onEdit, onDelete }: { f: Friend, matches: Match[], t: any, onOpenChamp: any, onEdit: any, onDelete: any }) {
+interface FriendCardProps {
+  key?: React.Key;
+  f: Friend;
+  matches: Match[];
+  t: any;
+  onOpenChamp: any;
+  onEdit: any;
+  onDelete: any;
+}
+
+function FriendCard({ f, matches, t, onOpenChamp, onEdit, onDelete }: FriendCardProps) {
   const operativeMatches = matches.filter(m => m.players.some(p => p.name === f.name));
   const wins = operativeMatches.filter(m => m.result === 'Victory').length;
   const wr = operativeMatches.length ? Math.round((wins / operativeMatches.length) * 100) : null;

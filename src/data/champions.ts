@@ -1,4 +1,4 @@
-import { Champion } from './types';
+import { Champion } from '../types';
 
 export const CHAMPIONS: Champion[] = [
   {key:"Aatrox",name:"Aatrox",dd:"Aatrox",classes:["Fighter"],roles:["Baron"],difficulty:"Medium",counters:["Malphite","Garen","Olaf"],goodVs:["Darius","Sion","Nasus"],tips:["Rush Blade of the Ruined King","Use W to avoid his Q knockup zones","Ult when low HP for massive healing"]},

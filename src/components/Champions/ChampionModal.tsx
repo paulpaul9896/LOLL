@@ -10,9 +10,10 @@ interface ChampionModalProps {
   onClose: () => void;
   t: (k: string) => string;
   matches: Match[];
+  onOpenChamp: (name: string) => void;
 }
 
-export default function ChampionModal({ champName, onClose, t, matches }: ChampionModalProps) {
+export default function ChampionModal({ champName, onClose, t, matches, onOpenChamp }: ChampionModalProps) {
   const c = CHAMPIONS.find(ch => ch.name === champName);
   const ls = LIVE_STATS[champName];
   const [abilities, setAbilities] = useState<any[]>([]);
@@ -124,7 +125,7 @@ export default function ChampionModal({ champName, onClose, t, matches }: Champi
               <h3 className="font-heading text-sm text-hex-red uppercase tracking-widest"><i className="fa-solid fa-shield-halved mr-2"></i>{t('champ_counters')}</h3>
               <div className="flex flex-wrap gap-2">
                 {c.counters.map(n => (
-                  <div key={n} onClick={() => openChampModal(n)} className="flex items-center gap-2 bg-[#010A13] border border-hex-red/30 hover:border-hex-red px-3 py-1.5 rounded-lg cursor-pointer transition">
+                  <div key={n} onClick={() => onOpenChamp(n)} className="flex items-center gap-2 bg-[#010A13] border border-hex-red/30 hover:border-hex-red px-3 py-1.5 rounded-lg cursor-pointer transition">
                     <img src={champImgUrl(n)} className="w-6 h-6 rounded-full border border-gray-700" />
                     <span className="text-gray-300 text-xs font-medium">{n}</span>
                   </div>
@@ -135,7 +136,7 @@ export default function ChampionModal({ champName, onClose, t, matches }: Champi
               <h3 className="font-heading text-sm text-hex-green uppercase tracking-widest"><i className="fa-solid fa-swords mr-2"></i>{t('champ_good_vs')}</h3>
               <div className="flex flex-wrap gap-2">
                 {c.goodVs.map(n => (
-                  <div key={n} onClick={() => openChampModal(n)} className="flex items-center gap-2 bg-[#010A13] border border-hex-green/30 hover:border-hex-green px-3 py-1.5 rounded-lg cursor-pointer transition">
+                  <div key={n} onClick={() => onOpenChamp(n)} className="flex items-center gap-2 bg-[#010A13] border border-hex-green/30 hover:border-hex-green px-3 py-1.5 rounded-lg cursor-pointer transition">
                     <img src={champImgUrl(n)} className="w-6 h-6 rounded-full border border-gray-700" />
                     <span className="text-gray-300 text-xs font-medium">{n}</span>
                   </div>

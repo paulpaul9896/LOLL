@@ -6,12 +6,14 @@ import { doc, deleteDoc } from 'firebase/firestore';
 import { showToast } from '../UI/ToastContainer';
 
 interface MatchHistoryItemProps {
+  key?: React.Key;
   match: Match;
   t: (k: string) => string;
   onOpenChamp: (name: string) => void;
+  onEdit: (match: Match) => void;
 }
 
-export default function MatchHistoryItem({ match, t, onOpenChamp }: MatchHistoryItemProps) {
+export default function MatchHistoryItem({ match, t, onOpenChamp, onEdit }: MatchHistoryItemProps) {
   const handleDelete = async () => {
     if (!window.confirm('Delete this match record?')) return;
     try {
@@ -34,7 +36,10 @@ export default function MatchHistoryItem({ match, t, onOpenChamp }: MatchHistory
             {match.duration ? ` • ${match.duration} MIN` : ''}
           </div>
         </div>
-        <button onClick={handleDelete} className="text-gray-700 hover:text-hex-red transition opacity-0 group-hover:opacity-100"><i className="fa-solid fa-trash-can"></i></button>
+        <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition">
+          <button onClick={() => onEdit(match)} className="text-gray-500 hover:text-hex-blue transition" title="Edit"><i className="fa-solid fa-pen"></i></button>
+          <button onClick={handleDelete} className="text-gray-700 hover:text-hex-red transition" title="Delete"><i className="fa-solid fa-trash-can"></i></button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5 border-t border-gray-800 pt-3">
