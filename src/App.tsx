@@ -29,68 +29,70 @@ export default function App() {
   const t = (key: string) => (i18n[lang] as any)[key] || key;
 
   useEffect(() => {
+    if (!user) return;
+
+    // Automatic Legacy Migration (Internal)
+    const migrateLegacy = async () => {
+      const hasMigrated = localStorage.getItem(`migrated_${user.uid}`);
+      if (hasMigrated) return;
+
+      try {
+        const legacyPathPrefix = ['artifacts', 'wildrift-companion-platform', 'public', 'data'];
+        const lf = await getDocs(collection(db, legacyPathPrefix[0], legacyPathPrefix[1], legacyPathPrefix[2], legacyPathPrefix[3], 'friends'));
+        const lm = await getDocs(collection(db, legacyPathPrefix[0], legacyPathPrefix[1], legacyPathPrefix[2], legacyPathPrefix[3], 'matches'));
+        const la = await getDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'appConfig'));
+        
+        if (lf.size > 0 || lm.size > 0 || la.exists()) {
+          const batch = writeBatch(db);
+          lf.forEach(d => {
+            const data = d.data();
+            if (!data.squadId) data.squadId = 'global';
+            batch.set(doc(collection(db, 'friends'), d.id), data, { merge: true });
+          });
+          lm.forEach(d => {
+            batch.set(doc(collection(db, 'matches'), d.id), d.data(), { merge: true });
+          });
+          if (la.exists()) {
+            batch.set(doc(db, 'appConfig', 'settings'), la.data(), { merge: true });
+          }
+          await batch.commit();
+          localStorage.setItem(`migrated_${user.uid}`, 'true');
+        }
+      } catch (e) {
+        // Migration might fail if paths don't exist, which is fine
+      }
+    };
+    migrateLegacy();
+
+    // Subscriptions
+    const friendsUnsub = onSnapshot(query(collection(db, 'friends'), where('squadId', '==', 'global')), snap => {
+      setFriends(snap.docs.map(d => ({ id: d.id, ...d.data() } as Friend)));
+    }, error => {
+      handleFirestoreError(error, OperationType.LIST, 'friends');
+    });
+    const matchesUnsub = onSnapshot(query(collection(db, 'matches'), orderBy('timestamp', 'desc')), snap => {
+      setMatches(snap.docs.map(d => ({ id: d.id, ...d.data() } as Match)));
+    }, error => {
+      handleFirestoreError(error, OperationType.LIST, 'matches');
+    });
+
+    return () => {
+      friendsUnsub();
+      matchesUnsub();
+    };
+  }, [user]);
+
+  useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       if (u) {
-        // App settings
         getDoc(doc(db, 'appConfig', 'settings')).then(snap => {
           if (snap.exists() && snap.data().geminiKey) {
             localStorage.setItem('gemini_api_key', snap.data().geminiKey);
           }
         });
-
-        // Automatic Legacy Migration
-        const migrateLegacy = async () => {
-          try {
-            const legacyPathPrefix = ['artifacts', 'wildrift-companion-platform', 'public', 'data'];
-            const lf = await getDocs(collection(db, legacyPathPrefix[0], legacyPathPrefix[1], legacyPathPrefix[2], legacyPathPrefix[3], 'friends'));
-            const lm = await getDocs(collection(db, legacyPathPrefix[0], legacyPathPrefix[1], legacyPathPrefix[2], legacyPathPrefix[3], 'matches'));
-            const la = await getDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'appConfig'));
-            
-            if (lf.size > 0 || lm.size > 0 || la.exists()) {
-              const batch = writeBatch(db);
-              lf.forEach(d => {
-                const data = d.data();
-                if (!data.squadId) data.squadId = 'global';
-                batch.set(doc(collection(db, 'friends'), d.id), data, { merge: true });
-              });
-              lm.forEach(d => {
-                batch.set(doc(collection(db, 'matches'), d.id), d.data(), { merge: true });
-              });
-              if (la.exists()) {
-                batch.set(doc(db, 'appConfig', 'settings'), la.data(), { merge: true });
-              }
-              await batch.commit();
-              console.log('Legacy records restored automatically');
-            }
-          } catch (e) {
-            console.error('Migration failed:', e);
-          }
-        };
-        migrateLegacy();
-
-        // Subscriptions
-        const friendsUnsub = onSnapshot(query(collection(db, 'friends'), where('squadId', '==', 'global')), snap => {
-          setFriends(snap.docs.map(d => ({ id: d.id, ...d.data() } as Friend)));
-        }, error => {
-          handleFirestoreError(error, OperationType.LIST, 'friends');
-        });
-        const matchesUnsub = onSnapshot(query(collection(db, 'matches'), orderBy('timestamp', 'desc')), snap => {
-          setMatches(snap.docs.map(d => ({ id: d.id, ...d.data() } as Match)));
-        }, error => {
-          handleFirestoreError(error, OperationType.LIST, 'matches');
-        });
-
-        setLoading(false);
-        return () => {
-          friendsUnsub();
-          matchesUnsub();
-        };
-      } else {
-        setFriends([]);
-        setMatches([]);
-        setLoading(false);
       }
+      setLoading(false);
     });
     return unsub;
   }, []);

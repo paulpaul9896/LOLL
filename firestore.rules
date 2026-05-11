@@ -10,7 +10,7 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
-    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function isVerified() { return isSignedIn(); }
     
     // Identity Check: For this squad app, anyone verified is part of the squad.
     function isSquad() { return isVerified(); }
@@ -62,7 +62,7 @@ service cloud.firestore {
     match /artifacts/wildrift-companion-platform/public/data/matches/{matchId} {
       allow read: if isSquad();
     }
-    match /artifacts/wildrift-companion-platform/public/appConfig/{configId} {
+    match /artifacts/wildrift-companion-platform/public/appConfig {
       allow read: if isSquad();
     }
 

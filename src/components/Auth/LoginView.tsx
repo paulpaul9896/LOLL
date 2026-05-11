@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { auth } from '../../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { showToast } from '../UI/ToastContainer';
 import { Lang } from '../../data/i18n';
 
@@ -15,27 +15,48 @@ export default function LoginView({ lang, onChangeLang, t }: LoginViewProps) {
   const [pass, setPass] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleAuth = async (action: 'login' | 'register' | 'reset') => {
-    if (!email) return showToast('Email required', 'error');
+  const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      if (action === 'login') await signInWithEmailAndPassword(auth, email, pass);
-      else if (action === 'register') await createUserWithEmailAndPassword(auth, email, pass);
-      else if (action === 'reset') {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      showToast(lang === 'zh' ? '登入成功！' : 'Login successful!', 'success');
+    } catch (e: any) {
+      showToast(e.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuth = async (action: 'login' | 'register' | 'reset') => {
+    if (!email) return showToast(lang === 'zh' ? '請輸入 Email' : 'Email required', 'error');
+    if (action !== 'reset' && !pass) return showToast(lang === 'zh' ? '請輸入密碼' : 'Password required', 'error');
+    
+    setLoading(true);
+    try {
+      if (action === 'login') {
+        await signInWithEmailAndPassword(auth, email, pass);
+        showToast(lang === 'zh' ? '登入成功！' : 'Login successful!', 'success');
+      } else if (action === 'register') {
+        await createUserWithEmailAndPassword(auth, email, pass);
+        showToast(lang === 'zh' ? '註冊成功！' : 'Registration successful!', 'success');
+      } else if (action === 'reset') {
         await sendPasswordResetEmail(auth, email);
         showToast(lang === 'zh' ? '重設密碼信件已寄出！' : 'Reset email sent!', 'success');
         setLoading(false);
         return;
       }
-      showToast(lang === 'zh' ? '登入成功！' : 'Login successful!', 'success');
     } catch (e: any) {
+      console.error('Auth Error:', e.code, e.message);
       const msgs: Record<string, string> = {
         'auth/invalid-credential': lang === 'zh' ? '帳號或密碼錯誤' : 'Invalid credentials',
-        'auth/user-not-found': lang === 'zh' ? '帳號不存在' : 'User not found',
+        'auth/invalid-email': lang === 'zh' ? '無效的 Email 格式' : 'Invalid email format',
+        'auth/user-disabled': lang === 'zh' ? '此帳號已被停用' : 'User disabled',
+        'auth/user-not-found': lang === 'zh' ? '帳號不存在，請先註冊' : 'User not found, please register',
         'auth/wrong-password': lang === 'zh' ? '密碼錯誤' : 'Wrong password',
-        'auth/email-already-in-use': lang === 'zh' ? '此信箱已被使用' : 'Email already in use',
-        'auth/weak-password': lang === 'zh' ? '密碼至少需6個字元' : 'Password min 6 chars',
-        'auth/invalid-email': lang === 'zh' ? '信箱格式錯誤' : 'Invalid email'
+        'auth/email-already-in-use': lang === 'zh' ? '此 Email 已經被註冊' : 'Email already in use',
+        'auth/operation-not-allowed': lang === 'zh' ? '登入服務未啟用，請聯繫管理員' : 'Login provider not enabled',
+        'auth/weak-password': lang === 'zh' ? '密碼太弱，請至少輸入 6 位數' : 'Weak password, min 6 chars'
       };
       showToast(msgs[e.code] || e.message, 'error');
     } finally {
@@ -92,6 +113,20 @@ export default function LoginView({ lang, onChangeLang, t }: LoginViewProps) {
           >
             {loading ? <i className="fa-solid fa-spinner spinner"></i> : 'LOGIN'}
           </button>
+          
+          <button 
+            disabled={loading}
+            onClick={handleGoogleLogin}
+            className="w-full py-3 rounded border border-gray-700 text-white hover:bg-white/5 transition font-heading flex items-center justify-center gap-2"
+          >
+            {loading ? <i className="fa-solid fa-spinner spinner"></i> : (
+              <>
+                <i className="fa-brands fa-google text-hex-blue"></i>
+                SIGN IN WITH GOOGLE
+              </>
+            )}
+          </button>
+
           <button 
             disabled={loading}
             onClick={() => handleAuth('register')} 
