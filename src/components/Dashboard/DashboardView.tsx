@@ -57,8 +57,8 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
     });
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <div className="lg:col-span-2 space-y-5">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:h-[calc(100vh-160px)]">
+      <div className="lg:col-span-2 space-y-5 lg:h-full lg:overflow-y-auto lg:pr-2 custom-scrollbar">
         <div className="bg-hex-panel lol-border p-5 rounded-lg shadow">
           <h2 className="font-heading text-lg text-hex-goldlight mb-4 flex items-center gap-2">
             <i className="fa-solid fa-chart-bar text-hex-blue"></i> {t('dash_wr')}
@@ -107,7 +107,7 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
         <DashboardRecent matches={matches} t={t} />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 lg:h-full lg:overflow-y-auto lg:pr-2 custom-scrollbar">
         <div className="bg-hex-panel lol-border p-4 rounded-lg shadow">
           <h2 className="font-heading text-sm text-hex-blue mb-3 flex items-center gap-2">
             <i className="fa-solid fa-users"></i> {t('squad_title')} ({friends.length})

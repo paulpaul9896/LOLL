@@ -223,8 +223,8 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <div className="bg-hex-panel lol-border p-5 rounded-lg shadow lg:sticky lg:top-20 h-fit">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:h-[calc(100vh-160px)]">
+      <div className="bg-hex-panel lol-border p-5 rounded-lg shadow h-fit lg:h-full lg:overflow-y-auto custom-scrollbar">
         <h2 className="font-heading text-lg text-hex-goldlight mb-4 border-b border-hex-gold/20 pb-2">{t('match_title')}</h2>
         
         <div className="mb-4">
@@ -377,7 +377,7 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
         </button>
       </div>
 
-      <div className="lg:col-span-2 space-y-3">
+      <div className="lg:col-span-2 space-y-3 lg:h-full lg:overflow-y-auto lg:pr-2 custom-scrollbar">
         {matches.length === 0 ? (
           <div className="text-center py-20 bg-hex-panel lol-border rounded">
             <p className="text-gray-500 font-heading tracking-widest">{t('match_empty')}</p>
