@@ -164,7 +164,7 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
       const base64 = screenshots[0].split(',')[1];
       const mimeType = 'image/jpeg';
       
-      const prompt = `Analyze this Wild Rift match result. Extract Result (Victory/Defeat), Match Duration (min), and for up to 5 players: Name, Champion, Kills, Deaths, Assists, Damage Dealt. Return ONLY JSON: {"result":"Victory"|"Defeat", "duration":number, "players": [{"name":"str", "champion":"str", "kills":num, "deaths":num, "assists":num, "dmgDealt":num}]}`;
+      const prompt = `Analyze this Wild Rift match result screenshot. Extract Result (Victory/Defeat), Match Duration (min), and the details for the 5 players on the LEFT team (the team whose stats are on the left side). Carefully read their in-game Names (they can be in English, Chinese, or contain symbols), Champion name, Kills, Deaths, Assists, and Damage Dealt. Return ONLY valid JSON with this exact structure: {"result":"Victory"|"Defeat", "duration":number, "players": [{"name":"exact player name", "champion":"champion name", "kills":num, "deaths":num, "assists":num, "dmgDealt":num}]}`;
 
       const ai = new GoogleGenAI({ apiKey: apiKey });
       const resp = await ai.models.generateContent({
@@ -182,7 +182,7 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
       if (parsed.players) {
         const newPlayers = parsed.players.map((p: any) => {
           const champ = CHAMPIONS.find(c => c.name.toLowerCase().includes(p.champion.toLowerCase()))?.name || p.champion;
-          const friend = friends.find(f => f.name.toLowerCase().includes(p.name.toLowerCase()))?.name || 'Unknown';
+          const friend = friends.find(f => f.name.toLowerCase().includes(p.name.toLowerCase()))?.name || p.name;
           return {
             name: friend,
             champion: champ,
