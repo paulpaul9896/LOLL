@@ -91,7 +91,7 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
     }
 
     try {
-      await addDoc(collection(db, 'matches'), {
+      await addDoc(collection(db, 'artifacts', 'wildrift-companion-platform', 'public', 'data', 'matches'), {
         timestamp: Date.now(),
         date: new Date().toLocaleDateString('zh-HK'),
         result,

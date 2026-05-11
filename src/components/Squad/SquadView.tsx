@@ -33,7 +33,7 @@ export default function SquadView({ friends, matches, t, onOpenChamp, onEditFrie
     if (!newName.trim()) return showToast('Name required', 'error');
     const roles = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="newRoles"]:checked')).map(e => e.value);
     try {
-      await addDoc(collection(db, 'friends'), {
+      await addDoc(collection(db, 'artifacts', 'wildrift-companion-platform', 'public', 'data', 'friends'), {
         name: newName,
         favoriteChampions: tempChamps,
         roles,
@@ -53,7 +53,7 @@ export default function SquadView({ friends, matches, t, onOpenChamp, onEditFrie
   const handleDelete = async (id: string) => {
     if (!window.confirm('Eject member from platform?')) return;
     try {
-      await deleteDoc(doc(db, 'friends', id));
+      await deleteDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'data', 'friends', id));
       showToast('Member removed', 'info');
     } catch (e: any) { }
   };

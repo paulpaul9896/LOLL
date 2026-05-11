@@ -15,7 +15,7 @@ export default function MatchHistoryItem({ match, t, onOpenChamp }: MatchHistory
   const handleDelete = async () => {
     if (!window.confirm('Delete this match record?')) return;
     try {
-      await deleteDoc(doc(db, 'matches', match.id));
+      await deleteDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'data', 'matches', match.id));
       showToast('Match deleted', 'info');
     } catch (e: any) {
       showToast(e.message, 'error');

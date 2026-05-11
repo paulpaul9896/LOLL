@@ -38,7 +38,7 @@ export default function EditMemberModal({ friendId, onClose, t, friends }: EditM
     const roles = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="editRoles"]:checked')).map(e => e.value);
     
     try {
-      await updateDoc(doc(db, 'friends', friendId), {
+      await updateDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'data', 'friends', friendId), {
         name,
         favoriteChampions: tempChamps,
         roles,
