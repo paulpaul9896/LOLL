@@ -25,7 +25,7 @@ export default function Navbar({ activeTab, onNavigate, t }: NavbarProps) {
               className="w-9 h-9 rounded-full border-2 border-hex-gold overflow-hidden cursor-pointer ai-glow flex-shrink-0"
               onClick={() => onNavigate('champions')}
             >
-              <img src="/icon.png" className="w-full h-full object-cover" alt="Logo" onError={(e) => { e.currentTarget.src = 'https://ddragon.leagueoflegends.com/cdn/14.9.1/img/profileicon/29.png'; }} />
+              <img src="icon.png" className="w-full h-full object-cover" alt="Logo" onError={(e) => { e.currentTarget.src = 'https://ddragon.leagueoflegends.com/cdn/14.9.1/img/profileicon/29.png'; }} />
             </div>
             <div className="leading-tight pointer-events-none">
               <span className="font-heading font-bold text-sm text-hex-goldlight tracking-wide">英雄聯盟</span>

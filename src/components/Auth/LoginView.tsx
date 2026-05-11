@@ -69,7 +69,7 @@ export default function LoginView({ lang, onChangeLang, t }: LoginViewProps) {
     <div className="max-w-md w-full mx-auto">
       <div className="text-center mb-8">
         <div className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-hex-gold bg-hex-panel overflow-hidden flex items-center justify-center ai-glow shadow-2xl">
-          <img src="/icon.png" className="w-full h-full object-cover" alt="App Logo" onError={(e) => { e.currentTarget.parentElement?.classList.add('bg-hex-panel'); e.currentTarget.style.display = 'none'; }} />
+          <img src="icon.png" className="w-full h-full object-cover" alt="App Logo" onError={(e) => { e.currentTarget.parentElement?.classList.add('bg-hex-panel'); e.currentTarget.style.display = 'none'; }} />
           <i className="fa-solid fa-gem text-hex-blue text-4xl absolute z-[-1]"></i>
         </div>
         <h1 className="font-heading text-3xl text-hex-goldlight tracking-wider">英雄聯盟 沖分群組</h1>
