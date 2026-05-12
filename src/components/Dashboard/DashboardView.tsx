@@ -14,6 +14,46 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
   const wins = matches.filter(m => m.result === 'Victory').length;
   const overallWr = matches.length ? Math.round((wins / matches.length) * 100) : 0;
 
+  // Queue specific win rates
+  const queueStats = {
+    duo: { g: 0, w: 0 },
+    trio: { g: 0, w: 0 },
+    full: { g: 0, w: 0 }
+  };
+
+  matches.forEach(m => {
+    const isWin = m.result === 'Victory';
+    const squadSize = m.players.length;
+    if (squadSize === 2) { queueStats.duo.g++; if (isWin) queueStats.duo.w++; }
+    else if (squadSize === 3) { queueStats.trio.g++; if (isWin) queueStats.trio.w++; }
+    else if (squadSize >= 5) { queueStats.full.g++; if (isWin) queueStats.full.w++; }
+  });
+
+  const getQueueWr = (type: 'duo'|'trio'|'full') => {
+    const { g, w } = queueStats[type];
+    return g ? Math.round((w / g) * 100) : 0;
+  };
+
+  // Export Report Function
+  const handleExport = () => {
+    const top3 = topChamps.slice(0, 3).map(c => `${c.name} (${c.wr}% WR)`).join(', ');
+    const text = `🏆 英雄聯盟 沖分報告 (v3.3)
+-------------------------
+📊 總進度: ${matches.length} 場 | 勝率: ${overallWr}%
+
+⏱️ 佇列表現:
+• 雙排: ${getQueueWr('duo')}% (${queueStats.duo.g}場)
+• 三排: ${getQueueWr('trio')}% (${queueStats.trio.g}場)
+• 五排: ${getQueueWr('full')}% (${queueStats.full.g}場)
+
+🌟 核心英雄:
+${top3}
+
+(來自: 英雄聯盟 沖分群組)
+-------------------------`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
   // Process chart data
   const champStats: Record<string, { p: number; w: number }> = {};
   matches.forEach(m => {
@@ -87,7 +127,7 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-hex-panel lol-border p-4 rounded-lg shadow flex justify-between items-center overflow-hidden">
             <div className="relative z-10">
               <p className="text-xs text-gray-400 uppercase tracking-tighter">{t('dash_total')}</p>
@@ -102,6 +142,30 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
             </div>
             <i className="fa-solid fa-trophy text-5xl text-hex-green/10 absolute -right-2"></i>
           </div>
+          <div className="bg-hex-panel lol-border p-4 rounded-lg shadow flex flex-col justify-center">
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Queue WinRates</p>
+            <div className="space-y-1">
+              <div className="flex justify-between text-[11px]">
+                <span className="text-gray-400">DUO</span>
+                <span className={getQueueWr('duo') >= 50 ? 'text-hex-green' : 'text-hex-red'}>{getQueueWr('duo')}%</span>
+              </div>
+              <div className="flex justify-between text-[11px]">
+                <span className="text-gray-400">TRIO</span>
+                <span className={getQueueWr('trio') >= 50 ? 'text-hex-green' : 'text-hex-red'}>{getQueueWr('trio')}%</span>
+              </div>
+              <div className="flex justify-between text-[11px]">
+                <span className="text-gray-400">FULL</span>
+                <span className={getQueueWr('full') >= 50 ? 'text-hex-green' : 'text-hex-red'}>{getQueueWr('full')}%</span>
+              </div>
+            </div>
+          </div>
+          <button 
+            onClick={handleExport}
+            className="bg-hex-panel lol-border p-4 rounded-lg shadow flex flex-col items-center justify-center hover:bg-white/5 transition group"
+          >
+            <i className="fa-brands fa-whatsapp text-2xl text-hex-green group-hover:scale-110 transition mb-1"></i>
+            <span className="text-[10px] text-hex-gold font-bold uppercase tracking-widest">{t('export_report')}</span>
+          </button>
         </div>
 
         <DashboardRecent matches={matches} t={t} />

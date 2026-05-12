@@ -68,7 +68,8 @@ export const i18n = {
     win_rate: "Win Rate",
     pick_rate: "Pick Rate",
     ban_rate: "Ban Rate",
-    stat_updated: "Data: May 9 2026 • CN Server"
+    stat_updated: "Data: May 12 2026 • CN Server",
+    export_report: "Export Report"
   },
   zh: {
     nav_dash: "數據分析",
@@ -137,6 +138,7 @@ export const i18n = {
     win_rate: "勝率",
     pick_rate: "選用率",
     ban_rate: "禁用率",
-    stat_updated: "資料：2026年5月9日 • 中國服務器"
+    stat_updated: "資料：2026年5月12日 • 中國服務器",
+    export_report: "匯出報告"
   }
 };
