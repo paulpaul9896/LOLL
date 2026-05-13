@@ -34,26 +34,6 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
     return g ? Math.round((w / g) * 100) : 0;
   };
 
-  // Export Report Function
-  const handleExport = () => {
-    const top3 = topChamps.slice(0, 3).map(c => `${c.name} (${c.wr}% WR)`).join(', ');
-    const text = `🏆 英雄聯盟 沖分報告 (v3.3)
--------------------------
-📊 總進度: ${matches.length} 場 | 勝率: ${overallWr}%
-
-⏱️ 佇列表現:
-• 雙排: ${getQueueWr('duo')}% (${queueStats.duo.g}場)
-• 三排: ${getQueueWr('trio')}% (${queueStats.trio.g}場)
-• 五排: ${getQueueWr('full')}% (${queueStats.full.g}場)
-
-🌟 核心英雄:
-${top3}
-
-(來自: 英雄聯盟 沖分群組)
--------------------------`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  };
-
   // Process chart data
   const champStats: Record<string, { p: number; w: number }> = {};
   matches.forEach(m => {
@@ -95,6 +75,64 @@ ${top3}
         avgDmg: dmgCount > 0 ? ((dmg / dmgCount) / 1000).toFixed(1) : null,
       };
     });
+
+  const friendStats = friends.map(f => {
+    const playedMatches = matches.filter(m => m.players.some(p => p.name === f.name));
+    const wonMatches = playedMatches.filter(m => m.result === 'Victory');
+    const wr = playedMatches.length > 0 ? Math.round((wonMatches.length / playedMatches.length) * 100) : 0;
+    return { ...f, games: playedMatches.length, wr };
+  }).sort((a, b) => b.games - a.games);
+
+  // Calculate Synergy Pairs
+  const pairStats: Record<string, { g: number; w: number; p1: string; p2: string }> = {};
+  matches.forEach(m => {
+    const isWin = m.result === 'Victory';
+    const squadPlayers = m.players.map(p => p.name).sort();
+    for (let i = 0; i < squadPlayers.length; i++) {
+      for (let j = i + 1; j < squadPlayers.length; j++) {
+        const p1 = squadPlayers[i];
+        const p2 = squadPlayers[j];
+        if (p1 && p2) {
+          const key = `${p1}||${p2}`;
+          if (!pairStats[key]) pairStats[key] = { g: 0, w: 0, p1, p2 };
+          pairStats[key].g++;
+          if (isWin) pairStats[key].w++;
+        }
+      }
+    }
+  });
+
+  const synergyPairs = Object.values(pairStats)
+    .filter(p => p.g >= 2)
+    .map(p => ({ ...p, wr: Math.round((p.w / p.g) * 100) }))
+    .sort((a, b) => b.wr === a.wr ? b.g - a.g : b.wr - a.wr);
+
+  // Export Report Function
+  const handleExport = () => {
+    const top3 = topChamps.slice(0, 3).map(c => `${c.name} (${c.wr}% WR)`).join(', ');
+    const topSynergy = synergyPairs.length > 0 
+      ? synergyPairs.slice(0, 3).map(p => `${p.p1} & ${p.p2} (${p.wr}%, ${p.g}場)`).join('\\n• ')
+      : '暫無足夠數據';
+      
+    const text = `🏆 英雄聯盟 沖分報告 (v3.6)
+-------------------------
+📊 總進度: ${matches.length} 場 | 勝率: ${overallWr}%
+
+⏱️ 佇列表現:
+• 雙排: ${getQueueWr('duo')}% (${queueStats.duo.g}場)
+• 三排: ${getQueueWr('trio')}% (${queueStats.trio.g}場)
+• 五排: ${getQueueWr('full')}% (${queueStats.full.g}場)
+
+🌟 核心英雄:
+${top3}
+
+🤝 最佳組合:
+• ${topSynergy}
+
+(來自: 英雄聯盟 沖分群組)
+-------------------------`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:h-[calc(100vh-160px)]">
@@ -180,7 +218,7 @@ ${top3}
             <p className="text-gray-500 text-sm italic">{t('squad_empty')}</p>
           ) : (
             <>
-              {friends.slice(0, 6).map(f => (
+              {friendStats.slice(0, 6).map(f => (
                 <div key={f.id} className="flex items-center gap-2 bg-[#010A13] rounded p-2 mb-1.5 border border-white/5">
                   {f.avatar ? (
                     <img src={f.avatar} className="w-8 h-8 rounded-full border border-hex-gold object-cover flex-shrink-0" />
@@ -189,8 +227,11 @@ ${top3}
                       {f.name.charAt(0)}
                     </div>
                   )}
-                  <div className="min-w-0">
-                    <p className="text-white text-sm font-bold truncate">{f.name}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex justify-between items-center pr-1">
+                      <p className="text-white text-sm font-bold truncate">{f.name}</p>
+                      {f.games > 0 && <span className={`text-[10px] font-bold ${wrColor(f.wr)}`}>{f.wr}% ({f.games}G)</span>}
+                    </div>
                     <p className="text-hex-gold text-[10px] truncate uppercase tracking-tighter">{f.roles.map(r => t('role_' + r.toLowerCase())).join(' • ')}</p>
                   </div>
                 </div>
@@ -223,6 +264,27 @@ ${top3}
                       <span className="ml-auto text-[9px] text-gray-700">{d.games} games</span>
                     </div>
                   )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="bg-hex-panel lol-border p-4 rounded-lg shadow">
+          <h2 className="font-heading text-sm text-hex-blue mb-3 flex items-center gap-2">
+            <i className="fa-solid fa-handshake"></i> Best Synergy Pairs
+          </h2>
+          {synergyPairs.length === 0 ? (
+             <p className="text-gray-500 text-sm italic">Not enough duo/trio games recorded.</p>
+          ) : (
+            synergyPairs.slice(0, 5).map(p => (
+              <div key={`${p.p1}-${p.p2}`} className="flex items-center gap-2 mb-2 last:mb-0 bg-[#010A13] p-2 rounded border border-white/5">
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center text-xs text-white">
+                    <span className="truncate">{p.p1} <span className="text-gray-500 mx-1">&</span> {p.p2}</span>
+                    <span className={`font-bold ${wrColor(p.wr)}`}>{p.wr}%</span>
+                  </div>
+                  <div className="text-[10px] text-gray-500">{p.w}W - {p.g - p.w}L ({p.g} games)</div>
                 </div>
               </div>
             ))

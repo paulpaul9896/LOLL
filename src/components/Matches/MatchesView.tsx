@@ -178,11 +178,16 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
       const base64 = screenshots[0].split(',')[1];
       const mimeType = 'image/jpeg';
       
-      const prompt = `Analyze this Wild Rift match result screenshot. Extract Result (Victory/Defeat), Match Duration (min), and the details for the 5 players on the LEFT team (the team whose stats are on the left side). Carefully read their in-game Names, Champion name, Kills, Deaths, Assists, Damage Dealt, Damage Taken, CS (Minions/Monsters killed), Gold Earned, Wards (if available), and MVP/SVP status. Return ONLY valid JSON with this exact structure: {"result":"Victory"|"Defeat", "duration":number, "players": [{"name":"exact player name", "champion":"champion name", "kills":num, "deaths":num, "assists":num, "dmgDealt":num|null, "dmgTaken":num|null, "cs":num|null, "gold":num|null, "wards":num|null, "notes":"MVP"|"SVP"|""}]}`;
+      const prompt = `Analyze this Wild Rift match result screenshot. Extract Result (Victory/Defeat), Match Duration (min), and the details for the 5 players on the LEFT team (the team whose stats are on the left side). 
+IMPORTANT VISUAL CUES: 
+- Headshots/avatars might be showing champion skins (e.g. Mecha skins, Star Guardian). Visually infer the BASE champion name.
+- Identify the base champion accurately.
+- Read their in-game Names, Champion name, Kills, Deaths, Assists, Damage Dealt, Damage Taken, CS (Minions/Monsters killed), Gold Earned, Wards (if available), and MVP/SVP status.
+Return ONLY valid JSON with this exact structure: {"result":"Victory"|"Defeat", "duration":number, "players": [{"name":"exact player name", "champion":"base champion name", "kills":num, "deaths":num, "assists":num, "dmgDealt":num|null, "dmgTaken":num|null, "cs":num|null, "gold":num|null, "wards":num|null, "notes":"MVP"|"SVP"|""}]}`;
 
       const ai = new GoogleGenAI({ apiKey: apiKey });
       const resp = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-3.1-pro-preview",
         contents: { parts: [{ inlineData: { mimeType, data: base64 } }, { text: prompt }] },
         config: { temperature: 0, responseMimeType: "application/json" }
       });

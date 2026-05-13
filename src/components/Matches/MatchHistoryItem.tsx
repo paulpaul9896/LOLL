@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Match } from '../../types';
 import { champImgUrl } from '../../lib/utils';
-import { db } from '../../lib/firebase';
+import { db, OperationType, handleFirestoreError } from '../../lib/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { showToast } from '../UI/ToastContainer';
 
@@ -15,12 +15,19 @@ interface MatchHistoryItemProps {
 
 export default function MatchHistoryItem({ match, t, onOpenChamp, onEdit }: MatchHistoryItemProps) {
   const handleDelete = async () => {
-    if (!window.confirm('Delete this match record?')) return;
+    if (!window.confirm('確定要刪除這場對戰嗎？')) return;
     try {
       await deleteDoc(doc(db, 'matches', match.id));
-      showToast('Match deleted', 'info');
+      // showToast('Match deleted', 'info'); // UI reacts instantly due to snapshot
     } catch (e: any) {
-      showToast(e.message, 'error');
+      console.error('Delete match error:', e);
+      try {
+        handleFirestoreError(e, OperationType.DELETE, 'matches');
+      } catch (firestoreErr: any) {
+        // handleFirestoreError throws an error, catch it to show the toast
+        // showToast('Delete failed', 'error');
+      }
+      alert('刪除失敗，請檢查權限及網絡');
     }
   };
 
@@ -38,7 +45,7 @@ export default function MatchHistoryItem({ match, t, onOpenChamp, onEdit }: Matc
         </div>
         <div className="flex items-center gap-3 opacity-100 transition">
           <button onClick={() => onEdit(match)} className="text-gray-500 hover:text-hex-blue transition" title="Edit"><i className="fa-solid fa-pen"></i></button>
-          <button onClick={handleDelete} className="text-gray-700 hover:text-hex-red transition" title="Delete"><i className="fa-solid fa-trash-can"></i></button>
+          <button onClick={(e) => { e.stopPropagation(); handleDelete(); }} className="text-gray-700 hover:text-hex-red transition" title="Delete"><i className="fa-solid fa-trash-can"></i></button>
         </div>
       </div>
 
