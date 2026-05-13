@@ -187,7 +187,7 @@ Return ONLY valid JSON with this exact structure: {"result":"Victory"|"Defeat", 
 
       const ai = new GoogleGenAI({ apiKey: apiKey });
       const resp = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-1.5-flash",
         contents: { parts: [{ inlineData: { mimeType, data: base64 } }, { text: prompt }] },
         config: { temperature: 0, responseMimeType: "application/json" }
       });
