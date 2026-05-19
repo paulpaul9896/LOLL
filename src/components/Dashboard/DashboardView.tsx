@@ -49,15 +49,17 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
     .map(([name, data]) => ({
       name,
       wr: Math.round((data.w / data.p) * 100),
-      games: data.p
+      games: data.p,
+      wins: data.w
     }))
-    .sort((a, b) => b.games - a.games)
+    .sort((a, b) => b.wins === a.wins ? (b.wr === a.wr ? b.games - a.games : b.wr - a.wr) : b.wins - a.wins)
     .slice(0, 10);
 
   const topChamps = Object.entries(champStats)
-    .sort((a, b) => b[1].p - a[1].p)
+    .map(([name, data]) => ({ name, data, wr: Math.round((data.w / data.p) * 100), wins: data.w }))
+    .sort((a, b) => b.wins === a.wins ? (b.wr === a.wr ? b.data.p - a.data.p : b.wr - a.wr) : b.wins - a.wins)
     .slice(0, 6)
-    .map(([name, data]) => {
+    .map(({ name, data, wr }) => {
       let kills = 0, deaths = 0, assists = 0, count = 0, dmg = 0, dmgCount = 0;
       matches.forEach(m => {
         m.players.filter(p => p.champion === name).forEach(p => {
@@ -70,7 +72,7 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
       return {
         name,
         games: data.p,
-        wr: Math.round((data.w / data.p) * 100),
+        wr,
         avgKda: count > 0 ? ((kills + assists) / Math.max(deaths, 1)).toFixed(1) : null,
         avgDmg: dmgCount > 0 ? ((dmg / dmgCount) / 1000).toFixed(1) : null,
       };
@@ -109,12 +111,14 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
 
   // Export Report Function
   const handleExport = () => {
-    const top3 = topChamps.slice(0, 3).map(c => `${c.name} (${c.wr}% WR)`).join(', ');
+    const top5ChampsStr = topChamps.length > 0
+      ? topChamps.slice(0, 5).map(c => `${c.name} (${c.wr}%, ${c.games}場)`).join('\\n• ')
+      : '暫無數據';
     const topSynergy = synergyPairs.length > 0 
-      ? synergyPairs.slice(0, 3).map(p => `${p.p1} & ${p.p2} (${p.wr}%, ${p.g}場)`).join('\\n• ')
-      : '暫無足夠數據';
+      ? synergyPairs.slice(0, 5).map(p => `${p.p1} & ${p.p2} (${p.wr}%, ${p.g}場)`).join('\\n• ')
+      : '暫無數據';
       
-    const text = `🏆 英雄聯盟 沖分報告 (v3.6)
+    const text = `🏆 英雄聯盟 沖分報告 (v3.8)
 -------------------------
 📊 總進度: ${matches.length} 場 | 勝率: ${overallWr}%
 
@@ -124,7 +128,7 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
 • 五排: ${getQueueWr('full')}% (${queueStats.full.g}場)
 
 🌟 核心英雄:
-${top3}
+• ${top5ChampsStr}
 
 🤝 最佳組合:
 • ${topSynergy}
