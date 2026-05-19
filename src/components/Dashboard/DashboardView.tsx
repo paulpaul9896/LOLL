@@ -105,7 +105,7 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
   });
 
   const synergyPairs = Object.values(pairStats)
-    .filter(p => p.g >= 2)
+    .filter(p => p.g > 4)
     .map(p => ({ ...p, wr: Math.round((p.w / p.g) * 100) }))
     .sort((a, b) => b.wr === a.wr ? b.g - a.g : b.wr - a.wr);
 
@@ -118,7 +118,7 @@ export default function DashboardView({ friends, matches, t, onOpenChamp }: Dash
       ? synergyPairs.slice(0, 5).map(p => `${p.p1} & ${p.p2} (${p.wr}%, ${p.g}場)`).join('\\n• ')
       : '暫無數據';
       
-    const text = `🏆 英雄聯盟 沖分報告 (v3.8)
+    const text = `🏆 英雄聯盟 沖分報告 (v3.9)
 -------------------------
 📊 總進度: ${matches.length} 場 | 勝率: ${overallWr}%
 
