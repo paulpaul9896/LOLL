@@ -1,10 +1,19 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDP8jBy-41etctptbIwVA33_w9xWWtOjxs",
+  authDomain: "loll-a6cfe.firebaseapp.com",
+  projectId: "loll-a6cfe",
+  storageBucket: "loll-a6cfe.firebasestorage.app",
+  messagingSenderId: "176441059550",
+  appId: "1:176441059550:web:17b0bcc82a95b499e8ba4f",
+  measurementId: "G-MX6D9EFRWS"
+};
 
 const app = initializeApp(firebaseConfig);
-export const db = (firebaseConfig as any).firestoreDatabaseId ? getFirestore(app, (firebaseConfig as any).firestoreDatabaseId) : getFirestore(app);
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 
 export enum OperationType {
