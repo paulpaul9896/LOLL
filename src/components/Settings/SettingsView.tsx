@@ -3,6 +3,7 @@ import { db, auth } from '../../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { User, signOut } from 'firebase/auth';
 import { Lang } from '../../data/i18n';
+import { STATS_META } from '../../data/stats';
 import { showToast } from '../UI/ToastContainer';
 
 interface SettingsViewProps {
@@ -82,13 +83,13 @@ export default function SettingsView({ lang, onChangeLang, t, user }: SettingsVi
             <i className="fa-solid fa-database text-hex-blue"></i> Live Stats Source
           </h2>
           <p className="text-white text-sm mb-2 leading-relaxed">
-            wrstats.online (sourced from Chinese Riot official API)
+            wrstats.online • {STATS_META.rank} Rank (filter_rank={STATS_META.filterRank})
           </p>
           <div className="text-hex-green text-xs font-medium bg-hex-green/10 rounded px-2 py-1 inline-flex items-center">
-            <i className="fa-solid fa-check mr-2"></i> 139 champions with real win rate / pick rate / ban rate
+            <i className="fa-solid fa-check mr-2"></i> {STATS_META.championCount} champions with win / pick / ban rate
           </div>
           <p className="text-gray-500 text-xs mt-3">
-            Last updated: May 11, 2026 • Updated daily
+            Last updated: {STATS_META.updatedLabel} • Run <code className="text-gray-400">npm run update-stats</code> to refresh
           </p>
         </section>
 

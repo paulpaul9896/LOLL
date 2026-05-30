@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CHAMPIONS } from '../../data/champions';
-import { LIVE_STATS } from '../../data/stats';
+import { LIVE_STATS, STATS_META } from '../../data/stats';
 import { Match } from '../../types';
 import { champImgUrl, wrColor, brColor, wrBg } from '../../lib/utils';
 
@@ -46,6 +46,12 @@ export default function ChampionsView({ t, onOpenChamp, matches }: ChampionsView
             <span className="text-hex-blue text-[10px] font-medium flex items-center gap-1">
               <i className="fa-solid fa-database"></i> {t('data_source')}
             </span>
+            {view === 'meta' && (
+              <>
+                <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
+                <span className="text-gray-500 text-[10px]">{STATS_META.updatedLabel}</span>
+              </>
+            )}
           </div>
         </div>
         <div className="flex bg-[#010A13] border border-gray-800 rounded p-1 gap-1">

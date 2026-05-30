@@ -64,11 +64,11 @@ export const i18n = {
     all: "All",
     meta_filter_all: "All Roles",
     loading: "Loading...",
-    data_source: "Source: wrstats.online • Chinese Riot API",
+    data_source: "Source: wrstats.online • Legend Rank • CN API",
     win_rate: "Win Rate",
     pick_rate: "Pick Rate",
     ban_rate: "Ban Rate",
-    stat_updated: "Data: May 12 2026 • CN Server",
+    stat_updated: "Legend Rank • CN Server",
     export_report: "Export Report"
   },
   zh: {
@@ -134,11 +134,11 @@ export const i18n = {
     all: "全部",
     meta_filter_all: "所有路線",
     loading: "載入中...",
-    data_source: "資料來源：wrstats.online • 中國官方API",
+    data_source: "資料來源：wrstats.online • Legend 段位 • 中國官方API",
     win_rate: "勝率",
     pick_rate: "選用率",
     ban_rate: "禁用率",
-    stat_updated: "資料：2026年5月12日 • 中國服務器",
+    stat_updated: "Legend 段位 • 中國服務器",
     export_report: "匯出報告"
   }
 };
