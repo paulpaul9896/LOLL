@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
+import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, query, orderBy, onSnapshot, doc, getDoc, where, getDocs, writeBatch } from 'firebase/firestore';
 import { Friend, Match } from './types';
@@ -12,7 +12,7 @@ import ChampionsView from './components/Champions/ChampionsView';
 import SettingsView from './components/Settings/SettingsView';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
-import ToastContainer from './components/UI/ToastContainer';
+import ToastContainer, { showToast } from './components/UI/ToastContainer';
 import ChampionModal from './components/Champions/ChampionModal';
 import EditMemberModal from './components/Squad/EditMemberModal';
 
@@ -25,62 +25,109 @@ export default function App() {
   const [selectedChamp, setSelectedChamp] = useState<string | null>(null);
   const [editingFriendId, setEditingFriendId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
 
   const t = (key: string) => (i18n[lang] as any)[key] || key;
 
-  useEffect(() => {
-    if (!user) return;
+  const migrateLegacy = async () => {
+    try {
+      const legacyFriends = collection(db, 'artifacts', 'wildrift-companion-platform', 'public', 'data', 'friends');
+      const legacyMatches = collection(db, 'artifacts', 'wildrift-companion-platform', 'public', 'data', 'matches');
+      const [lf, lm, la] = await Promise.all([
+        getDocs(legacyFriends),
+        getDocs(legacyMatches),
+        getDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'appConfig')),
+      ]);
 
-    // Automatic Legacy Migration (Internal)
-    const migrateLegacy = async () => {
-      const hasMigrated = localStorage.getItem(`migrated_${user.uid}`);
-      if (hasMigrated) return;
+      if (lf.size === 0 && lm.size === 0 && !la.exists()) return;
 
-      try {
-        const legacyPathPrefix = ['artifacts', 'wildrift-companion-platform', 'public', 'data'];
-        const lf = await getDocs(collection(db, legacyPathPrefix[0], legacyPathPrefix[1], legacyPathPrefix[2], legacyPathPrefix[3], 'friends'));
-        const lm = await getDocs(collection(db, legacyPathPrefix[0], legacyPathPrefix[1], legacyPathPrefix[2], legacyPathPrefix[3], 'matches'));
-        const la = await getDoc(doc(db, 'artifacts', 'wildrift-companion-platform', 'public', 'appConfig'));
-        
-        if (lf.size > 0 || lm.size > 0 || la.exists()) {
-          const batch = writeBatch(db);
-          lf.forEach(d => {
-            const data = d.data();
-            if (!data.squadId) data.squadId = 'global';
-            batch.set(doc(collection(db, 'friends'), d.id), data, { merge: true });
-          });
-          lm.forEach(d => {
-            batch.set(doc(collection(db, 'matches'), d.id), d.data(), { merge: true });
-          });
-          if (la.exists()) {
-            batch.set(doc(db, 'appConfig', 'settings'), la.data(), { merge: true });
-          }
-          await batch.commit();
-          localStorage.setItem(`migrated_${user.uid}`, 'true');
-        }
-      } catch (e) {
-        // Migration might fail if paths don't exist, which is fine
+      const batch = writeBatch(db);
+      lf.forEach((d) => {
+        const data = d.data();
+        if (!data.squadId) data.squadId = 'global';
+        batch.set(doc(collection(db, 'friends'), d.id), data, { merge: true });
+      });
+      lm.forEach((d) => {
+        batch.set(doc(collection(db, 'matches'), d.id), d.data(), { merge: true });
+      });
+      if (la.exists()) {
+        batch.set(doc(db, 'appConfig', 'settings'), la.data(), { merge: true });
       }
-    };
-    migrateLegacy();
+      await batch.commit();
+    } catch (e) {
+      console.warn('Legacy migration skipped:', e);
+    }
+  };
 
-    // Subscriptions
-    const friendsUnsub = onSnapshot(query(collection(db, 'friends'), where('squadId', '==', 'global')), snap => {
-      setFriends(snap.docs.map(d => ({ id: d.id, ...d.data() } as Friend)));
-    }, error => {
-      handleFirestoreError(error, OperationType.LIST, 'friends');
-    });
-    const matchesUnsub = onSnapshot(query(collection(db, 'matches'), orderBy('timestamp', 'desc')), snap => {
-      setMatches(snap.docs.map(d => ({ id: d.id, ...d.data() } as Match)));
-    }, error => {
-      handleFirestoreError(error, OperationType.LIST, 'matches');
-    });
+  useEffect(() => {
+    if (!user) {
+      setFriends([]);
+      setMatches([]);
+      setDataLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    let friendsUnsub = () => {};
+    let matchesUnsub = () => {};
+
+    const startSubscriptions = async () => {
+      setDataLoading(true);
+      try {
+        await user.getIdToken();
+        await migrateLegacy();
+      } catch (e) {
+        console.error('Failed to prepare cloud sync:', e);
+        showToast(lang === 'zh' ? '雲端同步準備失敗，請重新整理' : 'Cloud sync failed, please refresh', 'error');
+      }
+
+      if (cancelled) return;
+
+      let friendsReady = false;
+      let matchesReady = false;
+      const markReady = () => {
+        if (friendsReady && matchesReady) setDataLoading(false);
+      };
+
+      friendsUnsub = onSnapshot(
+        query(collection(db, 'friends'), where('squadId', '==', 'global')),
+        (snap) => {
+          setFriends(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Friend)));
+          friendsReady = true;
+          markReady();
+        },
+        (error) => {
+          console.error('Friends sync error:', error);
+          showToast(lang === 'zh' ? '無法載入戰友名單，請檢查登入狀態' : 'Failed to load squad members', 'error');
+          friendsReady = true;
+          markReady();
+        }
+      );
+
+      matchesUnsub = onSnapshot(
+        query(collection(db, 'matches'), orderBy('timestamp', 'desc')),
+        (snap) => {
+          setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Match)));
+          matchesReady = true;
+          markReady();
+        },
+        (error) => {
+          console.error('Matches sync error:', error);
+          showToast(lang === 'zh' ? '無法載入對戰紀錄，請檢查 Firestore 權限' : 'Failed to load match history', 'error');
+          matchesReady = true;
+          markReady();
+        }
+      );
+    };
+
+    startSubscriptions();
 
     return () => {
+      cancelled = true;
       friendsUnsub();
       matchesUnsub();
     };
-  }, [user]);
+  }, [user, lang]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -133,6 +180,13 @@ export default function App() {
       <main className={`flex-grow max-w-7xl mx-auto w-full px-3 sm:px-6 py-5 flex flex-col ${!user ? 'justify-center' : ''}`}>
         {!user ? (
           <LoginView lang={lang} onChangeLang={handleChangeLang} t={t} />
+        ) : dataLoading ? (
+          <div className="flex-grow flex items-center justify-center py-20">
+            <div className="text-hex-gold font-heading flex items-center gap-2">
+              <i className="fa-solid fa-spinner spinner"></i>
+              {lang === 'zh' ? '正在同步雲端紀錄...' : 'Syncing cloud records...'}
+            </div>
+          </div>
         ) : (
           <>
             {tab === 'dashboard' && <DashboardView friends={friends} matches={matches} t={t} onOpenChamp={setSelectedChamp} />}
