@@ -37,9 +37,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/data/stats.ts
-          git commit -m "$(cat <<'EOF'
-chore: update hero stats from wrstats.online
-
-EOF
-)"
+          git commit -m "chore: update hero stats from wrstats.online"
           git push
