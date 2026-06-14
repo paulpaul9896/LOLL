@@ -70,8 +70,14 @@ export default function MatchHistoryItem({ match, t, onOpenChamp, onEdit }: Matc
             </div>
 
             <div className="w-1/4 min-w-[100px] flex flex-col items-center">
-              <span className="text-[12px] text-hex-green font-mono tracking-wider">{p.kills}/{p.deaths}/{p.assists}</span>
-              <span className="text-[10px] text-gray-500 mt-0.5">KDA: {p.kda}</span>
+              {p.kills != null && p.deaths != null && p.assists != null ? (
+                <>
+                  <span className="text-[12px] text-hex-green font-mono tracking-wider">{p.kills}/{p.deaths}/{p.assists}</span>
+                  {p.kda && <span className="text-[10px] text-gray-500 mt-0.5">KDA: {p.kda}</span>}
+                </>
+              ) : (
+                <span className="text-[10px] text-gray-600 italic">Quick log</span>
+              )}
             </div>
 
             <div className="flex-1 flex flex-wrap gap-2 text-[10px] text-gray-400 justify-end items-center">

@@ -83,13 +83,13 @@ export default function SettingsView({ lang, onChangeLang, t, user }: SettingsVi
             <i className="fa-solid fa-database text-hex-blue"></i> Live Stats Source
           </h2>
           <p className="text-white text-sm mb-2 leading-relaxed">
-            wrstats.online • {STATS_META.rank} Rank (filter_rank={STATS_META.filterRank})
+            {STATS_META.source} • {STATS_META.rank} Rank
           </p>
           <div className="text-hex-green text-xs font-medium bg-hex-green/10 rounded px-2 py-1 inline-flex items-center">
             <i className="fa-solid fa-check mr-2"></i> {STATS_META.championCount} champions with win / pick / ban rate
           </div>
           <p className="text-gray-500 text-xs mt-3">
-            Last updated: {STATS_META.updatedLabel} • Run <code className="text-gray-400">npm run update-stats</code> to refresh
+            Last updated: {STATS_META.updatedLabel} • Auto-refreshed weekly from wrstats.online
           </p>
         </section>
 

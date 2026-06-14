@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { Match, Friend, MatchPlayer } from '../../types';
@@ -19,9 +19,16 @@ interface MatchesViewProps {
 }
 
 export default function MatchesView({ friends, matches, t, onOpenChamp, user }: MatchesViewProps) {
+  const [entryMode, setEntryMode] = useState<'quick' | 'full'>(() => (
+    localStorage.getItem('match_entry_mode') === 'full' ? 'full' : 'quick'
+  ));
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [result, setResult] = useState<'Victory' | 'Defeat' | ''>('');
   const [matchPlayers, setMatchPlayers] = useState<MatchPlayer[]>([]);
+  const [quickSelected, setQuickSelected] = useState<string[]>([]);
+  const [quickChamps, setQuickChamps] = useState<Record<string, string>>({});
+  const [quickChampSearch, setQuickChampSearch] = useState<Record<string, string>>({});
+  const [quickChampDrop, setQuickChampDrop] = useState<string | null>(null);
   const [currentFriend, setCurrentFriend] = useState('');
   const [currentChamp, setCurrentChamp] = useState('');
   const [champSearch, setChampSearch] = useState('');
@@ -44,6 +51,142 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
   const filteredChamps = CHAMPIONS.filter(c => 
     c.name.toLowerCase().includes(champSearch.toLowerCase())
   ).slice(0, 8);
+
+  const squadMembers = [
+    ...friends.map((f) => f.name),
+    ...(friends.some((f) => f.name === 'Myself') ? [] : ['Myself']),
+  ];
+
+  const getMemberChampionHistory = (memberName: string) => {
+    const seen = new Set<string>();
+    const history: string[] = [];
+    for (const match of matches) {
+      for (const player of match.players) {
+        if (player.name === memberName && player.champion && !seen.has(player.champion)) {
+          seen.add(player.champion);
+          history.push(player.champion);
+        }
+      }
+    }
+    return history;
+  };
+
+  const getDefaultChampion = (memberName: string) => {
+    const history = getMemberChampionHistory(memberName);
+    if (history[0]) return history[0];
+    const friend = friends.find((f) => f.name === memberName);
+    if (friend?.favoriteChampions?.[0]) return friend.favoriteChampions[0];
+    return '';
+  };
+
+  const setEntryModeAndPersist = (mode: 'quick' | 'full') => {
+    setEntryMode(mode);
+    localStorage.setItem('match_entry_mode', mode);
+  };
+
+  const toggleQuickMember = (memberName: string) => {
+    if (quickSelected.includes(memberName)) {
+      setQuickSelected(quickSelected.filter((name) => name !== memberName));
+      const nextChamps = { ...quickChamps };
+      const nextSearch = { ...quickChampSearch };
+      delete nextChamps[memberName];
+      delete nextSearch[memberName];
+      setQuickChamps(nextChamps);
+      setQuickChampSearch(nextSearch);
+      return;
+    }
+    if (quickSelected.length >= 5) {
+      showToast('Team full (max 5)', 'error');
+      return;
+    }
+    const champion = getDefaultChampion(memberName);
+    setQuickSelected([...quickSelected, memberName]);
+    setQuickChamps({ ...quickChamps, [memberName]: champion });
+    setQuickChampSearch({ ...quickChampSearch, [memberName]: champion });
+  };
+
+  const selectAllQuickMembers = () => {
+    const members = squadMembers.slice(0, 5);
+    const champs: Record<string, string> = {};
+    const search: Record<string, string> = {};
+    members.forEach((name) => {
+      const champion = getDefaultChampion(name);
+      champs[name] = champion;
+      search[name] = champion;
+    });
+    setQuickSelected(members);
+    setQuickChamps(champs);
+    setQuickChampSearch(search);
+  };
+
+  const loadLastTeam = () => {
+    const lastMatch = matches[0];
+    if (!lastMatch) return showToast('No previous match', 'error');
+    const names = lastMatch.players.map((p) => p.name).slice(0, 5);
+    const champs = Object.fromEntries(lastMatch.players.map((p) => [p.name, p.champion]));
+    const search = Object.fromEntries(lastMatch.players.map((p) => [p.name, p.champion]));
+    setQuickSelected(names);
+    setQuickChamps(champs);
+    setQuickChampSearch(search);
+    showToast('Loaded last team lineup', 'success');
+  };
+
+  const getFilteredChampsForMember = (memberName: string) => {
+    const query = (quickChampSearch[memberName] || '').toLowerCase().trim();
+    if (query) {
+      return CHAMPIONS
+        .filter((c) => c.name.toLowerCase().includes(query))
+        .slice(0, 10);
+    }
+
+    const history = getMemberChampionHistory(memberName);
+    const favorites = friends.find((f) => f.name === memberName)?.favoriteChampions || [];
+    const orderedNames = [...history];
+    favorites.forEach((name) => {
+      if (!orderedNames.includes(name)) orderedNames.push(name);
+    });
+
+    if (orderedNames.length > 0) {
+      return orderedNames
+        .map((name) => CHAMPIONS.find((c) => c.name === name))
+        .filter((c): c is typeof CHAMPIONS[number] => Boolean(c))
+        .slice(0, 10);
+    }
+
+    return CHAMPIONS.slice(0, 8);
+  };
+
+  const selectQuickChampion = (memberName: string, champion: string) => {
+    setQuickChamps({ ...quickChamps, [memberName]: champion });
+    setQuickChampSearch({ ...quickChampSearch, [memberName]: champion });
+    setQuickChampDrop(null);
+  };
+
+  const buildQuickPlayers = (): MatchPlayer[] => (
+    quickSelected.map((name) => ({
+      name,
+      champion: quickChamps[name] || '',
+    }))
+  );
+
+  const resetQuickForm = () => {
+    setQuickSelected([]);
+    setQuickChamps({});
+    setQuickChampSearch({});
+    setQuickChampDrop(null);
+  };
+
+  const resetFullForm = () => {
+    setMatchPlayers([]);
+    setScreenshots([]);
+    setDuration('');
+  };
+
+  const resetMatchForm = () => {
+    setResult('');
+    resetQuickForm();
+    resetFullForm();
+  };
 
   const handleAddPlayer = () => {
     if (!currentFriend || !currentChamp) {
@@ -101,8 +244,13 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
   };
 
   const handleSaveMatch = async () => {
-    if (!result || matchPlayers.length === 0) {
+    const players = entryMode === 'quick' ? buildQuickPlayers() : matchPlayers;
+    if (!result || players.length === 0) {
       showToast('Set result and add players', 'error');
+      return;
+    }
+    if (entryMode === 'quick' && players.some((p) => !p.champion)) {
+      showToast(t('match_quick_need_champ'), 'error');
       return;
     }
 
@@ -111,16 +259,13 @@ export default function MatchesView({ friends, matches, t, onOpenChamp, user }: 
         timestamp: Date.now(),
         date: new Date().toLocaleDateString('zh-HK'),
         result,
-        players: matchPlayers,
+        players,
         savedBy: user.email || 'unknown',
-        duration: parseInt(duration) || null,
+        duration: entryMode === 'full' ? (parseInt(duration) || null) : null,
         appVersion: '3.1'
       });
-      
-      setResult('');
-      setMatchPlayers([]);
-      setScreenshots([]);
-      setDuration('');
+
+      resetMatchForm();
       showToast('Match saved!', 'success');
     } catch (e: any) {
       showToast(e.message, 'error');
@@ -230,7 +375,27 @@ Return ONLY valid JSON with this exact structure: {"result":"Victory"|"Defeat", 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:h-[calc(100vh-160px)]">
       <div className="bg-hex-panel lol-border p-5 rounded-lg shadow h-fit lg:h-full lg:overflow-y-auto custom-scrollbar">
-        <h2 className="font-heading text-lg text-hex-goldlight mb-4 border-b border-hex-gold/20 pb-2">{t('match_title')}</h2>
+        <div className="flex items-center justify-between gap-3 mb-4 border-b border-hex-gold/20 pb-2">
+          <h2 className="font-heading text-lg text-hex-goldlight">{t('match_title')}</h2>
+          <div className="flex bg-[#010A13] border border-gray-800 rounded p-1 gap-1">
+            <button
+              onClick={() => setEntryModeAndPersist('quick')}
+              className={`px-3 py-1 text-[11px] rounded font-heading font-bold ${entryMode === 'quick' ? 'bg-hex-panel text-hex-gold border border-hex-gold/20' : 'text-gray-600 hover:text-gray-400'}`}
+            >
+              {t('match_mode_quick')}
+            </button>
+            <button
+              onClick={() => setEntryModeAndPersist('full')}
+              className={`px-3 py-1 text-[11px] rounded font-heading font-bold ${entryMode === 'full' ? 'bg-hex-panel text-hex-gold border border-hex-gold/20' : 'text-gray-600 hover:text-gray-400'}`}
+            >
+              {t('match_mode_full')}
+            </button>
+          </div>
+        </div>
+
+        {entryMode === 'quick' && (
+          <p className="text-[11px] text-gray-500 mb-4 leading-relaxed">{t('match_quick_hint')}</p>
+        )}
         
         <div className="mb-4">
           <div className="flex gap-2">
@@ -249,6 +414,104 @@ Return ONLY valid JSON with this exact structure: {"result":"Victory"|"Defeat", 
           </div>
         </div>
 
+        {entryMode === 'quick' ? (
+          <div className="mb-4 bg-[#010A13] border border-gray-800 p-3 rounded space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-gray-400">{t('match_quick_who')}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={selectAllQuickMembers}
+                  className="text-[10px] text-hex-blue hover:text-hex-gold transition"
+                >
+                  {t('match_quick_select_all')}
+                </button>
+                <button
+                  onClick={loadLastTeam}
+                  className="text-[10px] text-hex-blue hover:text-hex-gold transition"
+                >
+                  {t('match_quick_last_team')}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {squadMembers.map((name) => {
+                const selected = quickSelected.includes(name);
+                return (
+                  <button
+                    key={name}
+                    onClick={() => toggleQuickMember(name)}
+                    className={`px-3 py-1.5 rounded-full text-xs border transition ${selected ? 'bg-hex-gold/20 border-hex-gold text-hex-gold font-bold' : 'border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white'}`}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {quickSelected.length > 0 && (
+              <div className="space-y-2 border-t border-gray-800 pt-3">
+                {quickSelected.map((name) => {
+                  const recentChamps = getMemberChampionHistory(name);
+                  return (
+                  <div key={name} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                    <span className="text-white text-xs font-bold w-24 truncate">{name}</span>
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={quickChampSearch[name] || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setQuickChampSearch({ ...quickChampSearch, [name]: value });
+                          setQuickChamps({ ...quickChamps, [name]: '' });
+                          setQuickChampDrop(name);
+                        }}
+                        onFocus={() => setQuickChampDrop(name)}
+                        placeholder={t('match_sel_champ')}
+                        className="w-full bg-hex-panel border border-gray-700 rounded px-2 py-1.5 text-white text-sm outline-none"
+                      />
+                      {quickChampDrop === name && (
+                        <div className="absolute top-full left-0 right-0 bg-[#091428] border border-gray-700 rounded mt-1 max-h-40 overflow-y-auto z-50 shadow-xl">
+                          {getFilteredChampsForMember(name).map((c) => (
+                            <div
+                              key={c.key}
+                              onClick={() => selectQuickChampion(name, c.name)}
+                              className="flex items-center gap-2 px-2 py-1.5 hover:bg-white/10 cursor-pointer text-sm"
+                            >
+                              <img src={champImgUrl(c.name)} className="w-5 h-5 rounded-full" />
+                              <span className="text-white">{c.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    </div>
+                    {recentChamps.length > 0 && (
+                      <div className="pl-24">
+                        <p className="text-[10px] text-gray-500 mb-1">{t('match_quick_recent')}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {recentChamps.slice(0, 8).map((champion) => (
+                            <button
+                              key={champion}
+                              type="button"
+                              onClick={() => selectQuickChampion(name, champion)}
+                              className={`flex items-center gap-1 px-2 py-1 rounded border text-[11px] transition ${quickChamps[name] === champion ? 'border-hex-gold bg-hex-gold/15 text-hex-gold' : 'border-gray-700 text-gray-300 hover:border-gray-500'}`}
+                            >
+                              <img src={champImgUrl(champion)} className="w-4 h-4 rounded-full" />
+                              {champion}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )})}
+              </div>
+            )}
+          </div>
+        ) : (
+        <>
         <div className="mb-3 bg-[#010A13] border border-gray-800 p-3 rounded space-y-2">
           <p className="text-xs text-gray-400">{t('match_add_player')}</p>
           <select 
@@ -353,8 +616,9 @@ Return ONLY valid JSON with this exact structure: {"result":"Victory"|"Defeat", 
 
         <div className="mb-4 bg-[#010A13] border border-gray-800 p-3 rounded">
           <label className="text-xs text-gray-400 block mb-1">
-            <i className="fa-solid fa-image mr-1"></i> Screenshot <span className="text-hex-blue text-[9px]">(AI Auto-fill)</span>
+            <i className="fa-solid fa-image mr-1"></i> {t('match_ai_optional')}
           </label>
+          <p className="text-[10px] text-gray-600 mb-2">{t('match_ai_hint')}</p>
           <input type="file" onChange={handleScreenshotChange} accept="image/*" className="text-xs text-gray-500 w-full mb-2" />
           
           {screenshots.length > 0 && (
@@ -373,6 +637,27 @@ Return ONLY valid JSON with this exact structure: {"result":"Victory"|"Defeat", 
             </div>
           )}
         </div>
+        </>
+        )}
+
+        {entryMode === 'quick' && quickSelected.length > 0 && (
+          <ul className="space-y-1.5 mb-4 min-h-[40px]">
+            {buildQuickPlayers().map((p, i) => (
+              <li key={i} className="flex items-center justify-between bg-[#010A13] p-2 rounded border border-gray-800">
+                <div className="flex items-center gap-2 min-w-0">
+                  {p.champion && <img src={champImgUrl(p.champion)} className="w-6 h-6 rounded-full border border-hex-gold flex-shrink-0" />}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="text-white text-xs font-bold truncate">{p.name}</span>
+                      {p.champion && <span className="text-hex-gold text-[10px]">{p.champion}</span>}
+                    </div>
+                  </div>
+                </div>
+                <i className="fa-solid fa-xmark text-gray-600 hover:text-hex-red cursor-pointer ml-2" onClick={() => toggleQuickMember(p.name)}></i>
+              </li>
+            ))}
+          </ul>
+        )}
 
         <button 
           onClick={handleSaveMatch}
