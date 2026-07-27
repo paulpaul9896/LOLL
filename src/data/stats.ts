@@ -2,8 +2,8 @@ export const STATS_META = {
   rank: 'Legend',
   filterRank: '4',
   source: 'wrstats.online',
-  updatedAt: '2026-07-26',
-  updatedLabel: '2026-07-26',
+  updatedAt: '2026-07-27',
+  updatedLabel: '2026-07-27',
   championCount: 0,
 } as const;
 
